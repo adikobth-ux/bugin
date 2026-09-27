@@ -99,7 +99,14 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                   children: [
                     const AppBackButton(),
                     const SizedBox(width: 8),
-                    Text(s.title, style: AppText.title),
+                    Expanded(
+                      child: Text(
+                        s.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.title,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),

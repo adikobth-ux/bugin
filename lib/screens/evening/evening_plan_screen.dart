@@ -554,11 +554,17 @@ class _StopRow extends StatelessWidget {
                                     color: AppColors.primaryInk,
                                   ),
                                   const SizedBox(width: 5),
-                                  ExcludeSemantics(
-                                    child: Text(
-                                      l10n.evening.replace,
-                                      style: AppText.captionStrong.copyWith(
-                                        color: AppColors.primaryInk,
+                                  // На узком экране с крупным шрифтом подпись
+                                  // сокращается, а не вылезает за кнопку.
+                                  Flexible(
+                                    child: ExcludeSemantics(
+                                      child: Text(
+                                        l10n.evening.replace,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppText.captionStrong.copyWith(
+                                          color: AppColors.primaryInk,
+                                        ),
                                       ),
                                     ),
                                   ),
