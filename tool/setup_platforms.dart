@@ -35,6 +35,55 @@ void _android() {
     'android:label="$appName"',
   );
   _write(manifest, text, updated);
+  _androidSigning();
+}
+
+/// Все сборки прототипа (CI и локальные) подписываются одним ключом
+/// из .github/android/debug.keystore — новая версия ставится поверх старой.
+/// Для магазина приложений понадобится свой ключ.
+void _androidSigning() {
+  const marker = '// Bugin: общий ключ подписи прототипа';
+  final kts = File('android/app/build.gradle.kts');
+  final groovy = File('android/app/build.gradle');
+  final file = kts.existsSync() ? kts : groovy;
+  if (!file.existsSync()) {
+    return;
+  }
+  final text = file.readAsStringSync();
+  if (text.contains(marker)) {
+    return;
+  }
+  final block = kts.existsSync()
+      ? '''
+    $marker
+    signingConfigs {
+        getByName("debug") {
+            val shared = rootProject.file("../.github/android/debug.keystore")
+            if (shared.exists()) {
+                storeFile = shared
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+    }
+'''
+      : '''
+    $marker
+    signingConfigs {
+        debug {
+            def shared = rootProject.file("../.github/android/debug.keystore")
+            if (shared.exists()) {
+                storeFile shared
+                storePassword "android"
+                keyAlias "androiddebugkey"
+                keyPassword "android"
+            }
+        }
+    }
+''';
+  final updated = text.replaceFirst(RegExp(r'^android \{\n', multiLine: true), 'android {\n$block');
+  _write(file, text, updated);
 }
 
 void _ios() {
