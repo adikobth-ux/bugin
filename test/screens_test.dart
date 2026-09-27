@@ -3,6 +3,7 @@
 // построении экрана роняет тест — так длинные казахские строки не
 // сломают интерфейс незаметно.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bugin/app.dart';
@@ -40,7 +41,20 @@ const _eventIds = [
   MockEvents.seagull,
 ];
 
+/// По умолчанию тесты рисуют текст шрифтом, где каждая буква — квадрат
+/// шириной в кегль, и строки выходят почти вдвое шире настоящих.
+/// Загружаем настоящий шрифт приложения, чтобы ширины были как на телефоне.
+Future<void> _loadAppFont() async {
+  final loader = FontLoader('Onest');
+  for (final weight in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
+    loader.addFont(rootBundle.load('assets/fonts/Onest-$weight.ttf'));
+  }
+  await loader.load();
+}
+
 void main() {
+  setUpAll(_loadAppFont);
+
   const variants = [
     (width: 320.0, height: 640.0, textScale: 1.0),
     (width: 390.0, height: 844.0, textScale: 1.3),
