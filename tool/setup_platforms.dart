@@ -19,7 +19,7 @@ Future<void> main() async {
   _android();
   _ios();
   _web();
-  await _run(['run', 'flutter_launcher_icons']);
+  await _run(['run', 'flutter_launcher_icons', '-f', _launcherIconsConfig()]);
   await _run(['run', 'flutter_native_splash:create']);
   stdout.writeln('Платформы настроены: $appName, иконка, заставка, языки ${languages.join(', ')}.');
 }
@@ -89,6 +89,30 @@ void _web() {
       ..['background_color'] = backgroundColor;
     _write(manifest, text, '${const JsonEncoder.withIndent('    ').convert(json)}\n');
   }
+}
+
+/// flutter_launcher_icons падает, если папки платформы нет, поэтому
+/// берём flutter_launcher_icons.yaml и выключаем отсутствующие платформы.
+String _launcherIconsConfig() {
+  var config = File('flutter_launcher_icons.yaml').readAsStringSync();
+  for (final platform in ['android', 'ios']) {
+    if (!Directory(platform).existsSync()) {
+      config = config.replaceFirst(
+        RegExp('^  $platform: true', multiLine: true),
+        '  $platform: false',
+      );
+    }
+  }
+  if (!Directory('web').existsSync()) {
+    config = config.replaceFirst(
+      RegExp(r'^    generate: true', multiLine: true),
+      '    generate: false',
+    );
+  }
+  final file = File('.dart_tool/bugin/flutter_launcher_icons.yaml')
+    ..createSync(recursive: true)
+    ..writeAsStringSync(config);
+  return file.path;
 }
 
 void _write(File file, String before, String after) {

@@ -275,7 +275,7 @@ abstract final class MockPlaces {
         location: const GeoPoint(51.1244, 71.4198),
         reviews: [
           Review(
-            author: 'Айгерим',
+            author: t('Айгерим', 'Айгерім'),
             rating: 5,
             text: t(
               'Вид потрясающий, особенно на закате. Цены выше среднего, но оно того стоит.',
@@ -327,7 +327,7 @@ abstract final class MockPlaces {
         location: const GeoPoint(51.1219, 71.4282),
         reviews: [
           Review(
-            author: 'Нурлан',
+            author: t('Нурлан', 'Нұрлан'),
             rating: 4.5,
             text: t(
               'Зал IMAX отличный, кресла удобные. Попкорн дорогой, как везде.',
