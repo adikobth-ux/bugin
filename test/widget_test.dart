@@ -45,7 +45,7 @@ void main() {
       final now = DateTime(2026, 10, 1, 12);
       expect(kk.compactCount(1540), '1,5 мың');
       expect(kk.upToTenge(10000), '10 000 ₸-ге дейін');
-      expect(kk.fromTenge(12000), '12 000 ₸-ден бастап');
+      expect(kk.fromTenge(12000), '12 000 ₸-ден');
       expect(kk.fromTime(19 * 60), '19:00-ден');
       expect(kk.fromTime(19 * 60 + 30), '19:30-дан');
       expect(kk.untilTime(23 * 60), '23:00-ге дейін');

@@ -117,9 +117,9 @@ class AppStrings extends L10nSection {
   String upToTenge(int value) =>
       tr('до${Fmt.nbsp}${Fmt.tenge(value)}', '${Fmt.tenge(value)}-ге дейін');
 
-  /// «от 12 000 ₸» / «12 000 ₸-ден бастап».
+  /// «от 12 000 ₸» / «12 000 ₸-ден» (так короче и привычно в ценниках).
   String fromTenge(int value) =>
-      tr('от${Fmt.nbsp}${Fmt.tenge(value)}', '${Fmt.tenge(value)}-ден бастап');
+      tr('от${Fmt.nbsp}${Fmt.tenge(value)}', '${Fmt.tenge(value)}-ден');
 
   /// Средний чек: 0 → «бесплатно».
   String averageCheck(int value) =>

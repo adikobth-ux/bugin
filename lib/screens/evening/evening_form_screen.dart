@@ -250,7 +250,12 @@ class _Question extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: AppColors.primary),
               const SizedBox(width: 8),
-              Semantics(header: true, child: Text(title, style: AppText.bodyStrong)),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(title, style: AppText.bodyStrong),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),

@@ -40,14 +40,6 @@ const _eventIds = [
   MockEvents.seagull,
 ];
 
-/// Даёт экрану загрузить данные и доиграть анимации (без ожидания «тишины»:
-/// у некоторых экранов есть бесконечные анимации загрузки).
-Future<void> _settle(WidgetTester tester) async {
-  for (var i = 0; i < 15; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-}
-
 void main() {
   const variants = [
     (width: 320.0, height: 640.0, textScale: 1.0),
@@ -71,17 +63,35 @@ void main() {
           deviceLanguage: language,
         );
         final l10n = AppStrings.forLanguage(language);
+
+        // Ошибки собираем с пометкой экрана и проверяем в конце все сразу.
+        final problems = <String>{};
+        var where = 'главная';
+
+        /// Даёт экрану загрузить данные и доиграть анимации (без ожидания
+        /// «тишины»: у некоторых экранов бесконечные анимации загрузки).
+        Future<void> settle() async {
+          for (var i = 0; i < 15; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+            final error = tester.takeException();
+            if (error != null) {
+              problems.add('$where: ${error.toString().split('\n').first}');
+            }
+          }
+        }
+
         await tester.pumpWidget(BuginApp(services: services));
-        await _settle(tester);
+        await settle();
         expect(find.byType(HomeScreen), findsOneWidget);
 
         final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
 
         Future<void> visit(String route, [Object? arguments]) async {
+          where = '$route ${arguments ?? ''}';
           navigator.pushNamed(route, arguments: arguments);
-          await _settle(tester);
+          await settle();
           navigator.pop();
-          await _settle(tester);
+          await settle();
         }
 
         /// Нажимает на текст и закрывает открывшийся лист или диалог.
@@ -90,41 +100,46 @@ void main() {
           if (finder.evaluate().isEmpty) {
             return;
           }
+          where = '$where → «$text»';
           final routeBefore = ModalRoute.of(tester.element(finder.first));
           await tester.ensureVisible(finder.first);
           await tester.pump();
           await tester.tap(finder.first, warnIfMissed: false);
-          await _settle(tester);
+          await settle();
           if (routeBefore != null && !routeBefore.isCurrent) {
             navigator.pop();
-            await _settle(tester);
+            await settle();
           }
         }
 
         // Вкладки и разделы избранного.
         for (final tab in AppTab.values) {
+          where = 'вкладка ${tab.name}';
           services.state.tab.value = tab;
-          await _settle(tester);
+          await settle();
           if (tab == AppTab.favorites) {
             for (final section in FavoritesSection.values) {
+              where = 'избранное ${section.name}';
               services.state.favoritesSection.value = section;
-              await _settle(tester);
+              await settle();
             }
           }
         }
+        where = 'профиль';
 
         // Листы профиля: язык и сброс данных.
         await openAndClose(l10n.profile.languageRow);
         await openAndClose(l10n.profile.resetData);
 
         services.state.tab.value = AppTab.home;
-        await _settle(tester);
+        await settle();
 
         // Выбор города.
+        where = 'выбор города';
         showCityPicker(tester.element(find.byType(HomeScreen)));
-        await _settle(tester);
+        await settle();
         navigator.pop();
-        await _settle(tester);
+        await settle();
 
         // Поиск и выдача.
         await visit(AppRoutes.search);
@@ -140,32 +155,35 @@ void main() {
 
         // Карточки мест и событий, листы брони и билетов.
         for (final id in _placeIds) {
+          where = 'место $id';
           navigator.pushNamed(
             AppRoutes.place,
             arguments: PlaceArgs(id, reasons: const ['—', '—']),
           );
-          await _settle(tester);
+          await settle();
           if (id == MockPlaces.theGarden || id == MockPlaces.lunaCinema) {
             await openAndClose(
               id == MockPlaces.theGarden ? l10n.place.book : l10n.place.buyTicket,
             );
           }
           navigator.pop();
-          await _settle(tester);
+          await settle();
         }
         for (final id in _eventIds) {
+          where = 'событие $id';
           navigator.pushNamed(AppRoutes.event, arguments: id);
-          await _settle(tester);
+          await settle();
           if (id == MockEvents.neonNights) {
             await openAndClose(l10n.event.buyTicket);
           }
           navigator.pop();
-          await _settle(tester);
+          await settle();
         }
 
         // «Собрать мне вечер»: форма, новые планы, сохранённые сценарии.
         await visit(AppRoutes.eveningForm);
         for (final mood in Mood.values) {
+          where = 'план ${mood.name}';
           await visit(
             AppRoutes.eveningPlan,
             EveningPlanArgs(
@@ -178,13 +196,15 @@ void main() {
         }
 
         // Обработка запроса сама переходит к выдаче.
+        where = 'обработка запроса';
         navigator.pushNamed(AppRoutes.processing, arguments: query);
-        await _settle(tester);
-        await _settle(tester);
+        await settle();
+        await settle();
         navigator.popUntil((route) => route.isFirst);
-        await _settle(tester);
+        await settle();
 
         expect(find.byType(HomeScreen), findsOneWidget);
+        expect(problems, isEmpty, reason: problems.join('\n'));
 
         // Дожидаемся отложенных таймеров, чтобы тест завершился чисто.
         await tester.pumpWidget(const SizedBox.shrink());

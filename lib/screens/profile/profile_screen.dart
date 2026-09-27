@@ -197,13 +197,17 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         const Icon(Icons.logout_rounded, size: 18, color: AppColors.danger),
                         const SizedBox(width: 10),
-                        Text(
-                          l10n.profile.logout,
-                          style: const TextStyle(
-                            fontFamily: AppText.family,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.danger,
+                        Flexible(
+                          child: Text(
+                            l10n.profile.logout,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: AppText.family,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.danger,
+                            ),
                           ),
                         ),
                       ],
