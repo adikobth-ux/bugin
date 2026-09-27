@@ -149,7 +149,7 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   InfoRow.text(
                     icon: Icons.language_rounded,
-                    title: l10n.profile.language,
+                    title: l10n.profile.languageRow,
                     subtitle: language.nativeName,
                     trailing: _chevron,
                     onTap: () => _pickLanguage(context),

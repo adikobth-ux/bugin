@@ -31,7 +31,7 @@ class ProfileStrings extends L10nSection {
 
   // ---------- Настройки ----------
 
-  String get language => tr('Язык', 'Тіл');
+  String get languageRow => tr('Язык', 'Тіл');
   String get languageTitle => tr('Язык приложения', 'Қолданба тілі');
 
   String get notifications => tr('Уведомления', 'Хабарландырулар');
