@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/theme/app_colors.dart';
@@ -24,6 +25,7 @@ class RecommendationCard extends StatelessWidget {
     final place = item.place;
     final event = item.event;
 
+    final l10n = context.l10n;
     final String overline;
     final Widget meta;
     final IconData placeholderIcon;
@@ -33,13 +35,13 @@ class RecommendationCard extends StatelessWidget {
 
     if (place != null) {
       overline = place.categoryDetail.isEmpty
-          ? place.category.label
-          : '${place.category.label} · ${place.categoryDetail}';
+          ? l10n.label(place.category)
+          : '${l10n.label(place.category)} · ${place.categoryDetail}';
       meta = MetaLine(
         rating: place.rating,
         parts: [
           Fmt.distance(place.distanceKm),
-          Fmt.averageCheck(place.averageCheck),
+          l10n.averageCheck(place.averageCheck),
         ],
       );
       placeholderIcon = Visuals.placeIcon(place.category);
@@ -48,9 +50,9 @@ class RecommendationCard extends StatelessWidget {
       highlightOverline = false;
     } else {
       final e = event!;
-      overline = '${e.category.label} · ${Fmt.eventWhen(e.startsAt).toLowerCase()}';
+      overline = '${l10n.label(e.category)} · ${l10n.eventWhen(e.startsAt).toLowerCase()}';
       meta = MetaLine(
-        parts: [Fmt.distance(e.distanceKm), Fmt.fromTenge(e.priceFrom)],
+        parts: [Fmt.distance(e.distanceKm), l10n.fromTenge(e.priceFrom)],
       );
       placeholderIcon = Visuals.eventIcon(e.category);
       placeholderTone = Visuals.eventTone(e.category);

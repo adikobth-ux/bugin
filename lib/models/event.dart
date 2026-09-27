@@ -1,17 +1,13 @@
 import 'package:bugin/models/common.dart';
 
+/// Подписи — в `AppStrings.label` и `AppStrings.eventCategoryPlural`.
 enum EventCategory {
-  concert('Концерт', 'Концерты'),
-  cinema('Кино', 'Кино'),
-  theatre('Театр', 'Театр'),
-  exhibition('Выставка', 'Выставки'),
-  workshop('Мастер-класс', 'Мастер-классы'),
-  standup('Стендап', 'Стендап');
-
-  const EventCategory(this.label, this.pluralLabel);
-
-  final String label;
-  final String pluralLabel;
+  concert,
+  cinema,
+  theatre,
+  exhibition,
+  workshop,
+  standup;
 
   static EventCategory parse(String? name) => EventCategory.values.firstWhere(
         (c) => c.name == name,
@@ -20,16 +16,7 @@ enum EventCategory {
 }
 
 /// Фильтр дней в афише.
-enum EventDayFilter {
-  today('Сегодня'),
-  tomorrow('Завтра'),
-  weekend('Выходные'),
-  date('Дата');
-
-  const EventDayFilter(this.label);
-
-  final String label;
-}
+enum EventDayFilter { today, tomorrow, weekend, date }
 
 class TicketCategory {
   const TicketCategory(this.name, this.price);

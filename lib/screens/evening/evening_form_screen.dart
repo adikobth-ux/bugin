@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/theme/app_colors.dart';
@@ -45,7 +46,7 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
       initialDate: _request.date ?? now,
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: now.add(const Duration(days: 60)),
-      helpText: 'Когда собираемся?',
+      helpText: context.l10n.evening.datePickerTitle,
     );
     if (picked != null && mounted) {
       _update(_request.copyWith(day: PlanDay.date, date: picked));
@@ -61,6 +62,8 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
   @override
   Widget build(BuildContext context) {
     final date = _request.date;
+    final l10n = context.l10n;
+    final s = l10n.evening;
 
     return AnnotatedRegion(
       value: AppTheme.overlayOnLight,
@@ -71,14 +74,14 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                _request.summary,
+                l10n.requestSummary(_request),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.caption.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
               PrimaryButton(
-                label: 'Создать план',
+                label: s.createPlan,
                 icon: Icons.auto_awesome,
                 onPressed: _create,
               ),
@@ -92,31 +95,31 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
-                const Row(
+                Row(
                   children: [
-                    AppBackButton(),
-                    SizedBox(width: 8),
-                    Text('Собрать мне вечер', style: AppText.title),
+                    const AppBackButton(),
+                    const SizedBox(width: 8),
+                    Text(s.title, style: AppText.title),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Semantics(
                   header: true,
-                  child: const Text('Какой вечер хочешь?', style: AppText.display),
+                  child: Text(s.headline, style: AppText.display),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Соберу план: места, время и бюджет',
+                  s.subtitle,
                   style: AppText.body.copyWith(color: AppColors.inkSecondary),
                 ),
                 const SizedBox(height: 24),
                 _Question(
                   icon: Icons.people_outline_rounded,
-                  title: 'С кем?',
+                  title: s.companyQuestion,
                   children: [
                     for (final company in Company.values)
                       SelectChip(
-                        label: company.label,
+                        label: l10n.label(company),
                         selected: _request.company == company,
                         onTap: () => _update(_request.copyWith(company: company)),
                       ),
@@ -124,13 +127,13 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                 ),
                 _Question(
                   icon: Icons.calendar_today_outlined,
-                  title: 'Когда?',
+                  title: s.dayQuestion,
                   children: [
                     for (final day in PlanDay.values)
                       SelectChip(
                         label: day == PlanDay.date && date != null
-                            ? Fmt.relativeDay(date)
-                            : day.label,
+                            ? l10n.relativeDay(date)
+                            : l10n.label(day),
                         icon: day == PlanDay.date ? Icons.calendar_month_outlined : null,
                         selected: _request.day == day,
                         onTap: () {
@@ -145,7 +148,7 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                 ),
                 _Question(
                   icon: Icons.schedule_rounded,
-                  title: 'Во сколько начнём?',
+                  title: s.startQuestion,
                   children: [
                     for (final start in EveningRequest.startOptions)
                       SelectChip(
@@ -157,11 +160,11 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                 ),
                 _Question(
                   icon: Icons.account_balance_wallet_outlined,
-                  title: 'Бюджет на человека',
+                  title: s.budgetQuestion,
                   children: [
                     for (final budget in EveningRequest.budgetOptions)
                       SelectChip(
-                        label: EveningRequest.budgetLabel(budget),
+                        label: l10n.budgetLabel(budget),
                         selected: _request.budget == budget,
                         onTap: () => _update(
                           budget == null
@@ -173,11 +176,11 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                 ),
                 _Question(
                   icon: Icons.dark_mode_outlined,
-                  title: 'Настроение',
+                  title: s.moodQuestion,
                   children: [
                     for (final mood in Mood.values)
                       SelectChip(
-                        label: mood.label,
+                        label: l10n.label(mood),
                         selected: _request.mood == mood,
                         onTap: () => _update(_request.copyWith(mood: mood)),
                       ),
@@ -185,9 +188,9 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                 ),
                 Row(
                   children: [
-                    const Text('Пожелания', style: AppText.bodyStrong),
+                    Text(s.wishes, style: AppText.bodyStrong),
                     const SizedBox(width: 6),
-                    Text('— необязательно', style: AppText.caption.copyWith(fontSize: 15)),
+                    Text(s.optional, style: AppText.caption.copyWith(fontSize: 15)),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -197,7 +200,7 @@ class _EveningFormScreenState extends State<EveningFormScreen> {
                   textInputAction: TextInputAction.done,
                   style: AppText.bodyStrong.copyWith(fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    hintText: 'Например: без кино, хочу погулять у воды',
+                    hintText: s.wishesHint,
                     hintStyle: AppText.body.copyWith(color: AppColors.inkMuted),
                     filled: true,
                     fillColor: AppColors.surface,

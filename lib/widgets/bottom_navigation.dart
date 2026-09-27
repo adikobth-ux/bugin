@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/navigation/app_tab.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -78,7 +79,7 @@ class _NavItem extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                tab.label,
+                context.l10n.label(tab),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.micro.copyWith(

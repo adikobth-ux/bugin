@@ -14,16 +14,13 @@ class GeoPoint {
 }
 
 /// Повод — для чего человек ищет место.
+/// Подписи — в `AppStrings.label`.
 enum Occasion {
-  date('Свидание'),
-  friends('С друзьями'),
-  work('Поработать'),
-  family('С семьёй'),
-  solo('Для себя');
-
-  const Occasion(this.label);
-
-  final String label;
+  date,
+  friends,
+  work,
+  family,
+  solo;
 
   static Occasion? tryParse(String? name) {
     for (final value in Occasion.values) {
@@ -37,14 +34,10 @@ enum Occasion {
 
 /// Настроение места или события. Коды совпадают с кодами параметров поиска.
 enum Vibe {
-  beautiful('Красиво'),
-  calm('Спокойно'),
-  active('Активно'),
-  novelty('Что-то новое');
-
-  const Vibe(this.label);
-
-  final String label;
+  beautiful,
+  calm,
+  active,
+  novelty;
 
   static Vibe? tryParse(String? name) {
     for (final value in Vibe.values) {

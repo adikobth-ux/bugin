@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/services/app_services.dart';
@@ -71,7 +71,7 @@ class _AfishaScreenState extends State<AfishaScreen> {
       initialDate: _date ?? now,
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: now.add(const Duration(days: 60)),
-      helpText: 'Выбери дату',
+      helpText: context.l10n.afisha.pickDate,
     );
     if (picked == null || !mounted) {
       return;
@@ -97,16 +97,17 @@ class _AfishaScreenState extends State<AfishaScreen> {
     }
   }
 
-  String get _dayTitle {
+  String _dayTitle(AppStrings l10n) {
     final date = _date;
     if (_day == EventDayFilter.date && date != null) {
-      return Fmt.relativeDay(date);
+      return l10n.relativeDay(date);
     }
-    return _day.label;
+    return l10n.label(_day);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final date = _date;
     final showFeatured = _category == null && _day != EventDayFilter.date;
 
@@ -127,7 +128,7 @@ class _AfishaScreenState extends State<AfishaScreen> {
                     Expanded(
                       child: Semantics(
                         header: true,
-                        child: const Text('Афиша', style: AppText.display),
+                        child: Text(l10n.afisha.title, style: AppText.display),
                       ),
                     ),
                     const CityButton(),
@@ -143,8 +144,8 @@ class _AfishaScreenState extends State<AfishaScreen> {
                     for (final day in EventDayFilter.values)
                       SelectChip(
                         label: day == EventDayFilter.date && date != null
-                            ? Fmt.relativeDay(date)
-                            : day.label,
+                            ? l10n.relativeDay(date)
+                            : l10n.label(day),
                         icon: day == EventDayFilter.date
                             ? Icons.calendar_month_outlined
                             : null,
@@ -162,14 +163,14 @@ class _AfishaScreenState extends State<AfishaScreen> {
                   spacing: 6,
                   children: [
                     SelectChip(
-                      label: 'Все',
+                      label: l10n.all,
                       style: SelectChipStyle.soft,
                       selected: _category == null,
                       onTap: () => _setCategory(null),
                     ),
                     for (final category in EventCategory.values)
                       SelectChip(
-                        label: category.pluralLabel,
+                        label: l10n.eventCategoryPlural(category),
                         icon: Visuals.eventIcon(category),
                         style: SelectChipStyle.soft,
                         selected: _category == category,
@@ -191,7 +192,7 @@ class _AfishaScreenState extends State<AfishaScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SectionHeader(title: 'Главное на неделе'),
+                        SectionHeader(title: l10n.afisha.featured),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: items == null
@@ -219,14 +220,13 @@ class _AfishaScreenState extends State<AfishaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SectionHeader(
-                        title: _dayTitle,
+                        title: _dayTitle(l10n),
                         trailing: items == null || items.isEmpty
                             ? null
                             : Padding(
                                 padding: const EdgeInsets.only(right: 4),
                                 child: Text(
-                                  '${items.length} '
-                                  '${Fmt.plural(items.length, 'событие', 'события', 'событий')}',
+                                  l10n.afisha.eventsCount(items.length),
                                   style: AppText.caption.copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ),
@@ -268,6 +268,7 @@ class _EventList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n.afisha;
     if (snapshot.hasError) {
       return ErrorState(onRetry: onRetry);
     }
@@ -278,9 +279,9 @@ class _EventList extends StatelessWidget {
     if (items.isEmpty) {
       return EmptyState(
         icon: Icons.event_busy_outlined,
-        title: 'Здесь пока пусто',
-        message: 'На этот день ничего не нашлось — загляни на выходные',
-        actionLabel: showDay ? null : 'Показать выходные',
+        title: strings.emptyTitle,
+        message: strings.emptyMessage,
+        actionLabel: showDay ? null : strings.showWeekend,
         onAction: showDay ? null : onShowWeekend,
       );
     }

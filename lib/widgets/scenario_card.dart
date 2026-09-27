@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -41,10 +42,13 @@ class ScenarioCard extends StatelessWidget {
                     height: 104,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  const Positioned(
+                  Positioned(
                     left: 8,
                     top: 8,
-                    child: OverlayLabel('Сценарий', color: AppColors.primaryInk),
+                    child: OverlayLabel(
+                      context.l10n.scenario,
+                      color: AppColors.primaryInk,
+                    ),
                   ),
                 ],
               ),
@@ -70,7 +74,7 @@ class ScenarioCard extends StatelessWidget {
                     children: [
                       _Meta(
                         icon: Icons.schedule_rounded,
-                        text: '≈ ${Fmt.durationShort(scenario.durationMinutes)}',
+                        text: '≈ ${context.l10n.durationShort(scenario.durationMinutes)}',
                       ),
                       _Meta(
                         icon: Icons.account_balance_wallet_outlined,

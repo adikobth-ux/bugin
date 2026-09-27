@@ -1,13 +1,18 @@
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/data/mock_catalog.dart';
+import 'package:bugin/l10n/app_language.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/events_repository.dart';
 import 'package:bugin/services/mock/simulated_network.dart';
 
 class MockEventsRepository implements EventsRepository {
-  MockEventsRepository(this._events, {required this.latency});
+  MockEventsRepository(this._catalog, this._language, {required this.latency});
 
-  final List<Event> _events;
+  final MockCatalog _catalog;
+  final CurrentLanguage _language;
   final Duration latency;
+
+  List<Event> get _events => _catalog.events(_language());
 
   Event? _find(String id) {
     for (final event in _events) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/constants.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/services/app_services.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -18,7 +19,7 @@ class CityButton extends StatelessWidget {
       valueListenable: state.city,
       builder: (context, city, _) => Pressable(
         onTap: () => showCityPicker(context),
-        semanticLabel: 'Город: $city. Изменить',
+        semanticLabel: context.l10n.cityButton(city),
         child: Container(
           height: 40,
           padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
@@ -51,8 +52,8 @@ Future<void> showCityPicker(BuildContext context) async {
   final state = AppScope.of(context).state;
   final picked = await showAppSheet<String>(
     context,
-    title: 'Город',
-    subtitle: 'Покажем места и события рядом',
+    title: context.l10n.city,
+    subtitle: context.l10n.cityPickerHint,
     builder: (sheetContext) => Column(
       children: [
         for (final city in kCities)

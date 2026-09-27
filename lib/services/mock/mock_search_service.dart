@@ -1,53 +1,51 @@
 import 'dart:math';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/data/mock_catalog.dart';
+import 'package:bugin/data/mock_profile.dart';
+import 'package:bugin/l10n/app_language.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/mock/simulated_network.dart';
+import 'package:bugin/services/search_history.dart';
 import 'package:bugin/services/search_service.dart';
 
 /// Правила вместо AI: ключевые слова → параметры, параметры → ранжирование.
+/// Понимает запросы на русском и казахском, объяснения пишет на языке приложения.
 /// Интерфейс тот же, что будет у настоящего сервиса.
 class MockSearchService implements SearchService {
   MockSearchService({
-    required List<Place> places,
-    required List<Event> events,
+    required MockCatalog catalog,
+    required CurrentLanguage language,
+    required SearchHistory history,
     required this.latency,
-    List<String> recent = const [],
-    List<String> suggestions = const [],
-  })  : _places = places,
-        _events = events,
-        _recent = List.of(recent),
-        _suggestions = suggestions;
+  })  : _catalog = catalog,
+        _language = language,
+        _history = history;
 
-  final List<Place> _places;
-  final List<Event> _events;
+  final MockCatalog _catalog;
+  final CurrentLanguage _language;
+  final SearchHistory _history;
   final Duration latency;
-  final List<String> _recent;
-  final List<String> _suggestions;
   final _random = Random();
 
-  @override
-  List<String> get recentQueries => List.unmodifiable(_recent);
+  List<Place> get _places => _catalog.places(_language());
+  List<Event> get _events => _catalog.events(_language());
+
+  /// Текст объяснения на языке приложения.
+  String _t(String ru, String kk) => AppStrings.forLanguage(_language()).tr(ru, kk);
 
   @override
-  List<String> get suggestions => _suggestions;
+  List<String> get recentQueries => _history.queries;
 
   @override
-  void remember(String query) {
-    final q = query.trim();
-    if (q.isEmpty) {
-      return;
-    }
-    _recent
-      ..remove(q)
-      ..insert(0, q);
-    if (_recent.length > 8) {
-      _recent.removeRange(8, _recent.length);
-    }
-  }
+  List<String> get suggestions => MockProfile.suggestions(_language());
 
   @override
-  void clearHistory() => _recent.clear();
+  void remember(String query) => _history.remember(query);
+
+  @override
+  void clearHistory() => _history.clear();
 
   // ---------- Понимание запроса ----------
 
@@ -62,28 +60,28 @@ class MockSearchService implements SearchService {
 
     final params = <IntentParam>[];
 
-    final occasion = has(['девушк', 'парн', 'свидан', 'вдвоем', 'романт', 'любим'])
+    final occasion = has(['девушк', 'парн', 'свидан', 'вдвоем', 'романт', 'любим', 'кездесу', 'қызбен', 'жігіт', 'екеуміз', 'сүйікті'])
         ? 'date'
-        : has(['друз', 'компани'])
+        : has(['друз', 'компани', 'достар', 'досым', 'доспен'])
             ? 'friends'
-            : has(['работ', 'ноут', 'розетк', 'учеб', 'позаниматься'])
+            : has(['работ', 'ноут', 'розетк', 'учеб', 'позаниматься', 'жұмыс', 'оқу', 'сабақ'])
                 ? 'work'
-                : has(['семь', 'детьми', 'ребен', 'родител'])
+                : has(['семь', 'детьми', 'ребен', 'родител', 'отбасы', 'бала', 'ата-ана'])
                     ? 'family'
-                    : has(['для себя', 'одному', 'одной'])
+                    : has(['для себя', 'одному', 'одной', 'өзім үшін', 'жалғыз'])
                         ? 'solo'
                         : null;
     if (occasion != null) {
       params.add(IntentParam.of(ParamType.occasion, occasion));
     }
 
-    final time = has(['вечер'])
+    final time = has(['вечер', 'кешке', 'кешт', 'кешкі'])
         ? 'evening'
-        : has(['утр', 'завтрак'])
+        : has(['утр', 'завтрак', 'таңертең', 'таңғы'])
             ? 'morning'
-            : has(['днем', 'обед'])
+            : has(['днем', 'обед', 'күндіз', 'түскі'])
                 ? 'day'
-                : has(['ноч'])
+                : has(['ноч', 'түнде', 'түнгі'])
                     ? 'night'
                     : null;
     params.add(
@@ -99,28 +97,28 @@ class MockSearchService implements SearchService {
     final amount = _amount(q);
     if (amount != null) {
       params.add(IntentParam.of(ParamType.budget, '$amount'));
-    } else if (has(['недорог', 'не дорог', 'не слишком дорог', 'дешев', 'бюджетн', 'эконом'])) {
+    } else if (has(['недорог', 'не дорог', 'не слишком дорог', 'дешев', 'бюджетн', 'эконом', 'арзан', 'қымбат емес', 'үнемді'])) {
       params.add(IntentParam.of(ParamType.budget, '15000'));
-    } else if (has(['шикарн', 'премиал', 'не важно сколько'])) {
+    } else if (has(['шикарн', 'премиал', 'не важно сколько', 'сәнді', 'премиум'])) {
       params.add(IntentParam.of(ParamType.budget, 'any'));
     }
 
-    final mood = has(['красив', 'романт', 'панорам'])
+    final mood = has(['красив', 'романт', 'панорам', 'әдемі', 'көрінісі'])
         ? 'beautiful'
-        : has(['спокой', 'тих', 'уют', 'расслаб'])
+        : has(['спокой', 'тих', 'уют', 'расслаб', 'тыныш', 'жайлы', 'демал'])
             ? 'calm'
-            : has(['актив', 'спорт', 'драйв', 'весел', 'подвига'])
+            : has(['актив', 'спорт', 'драйв', 'весел', 'подвига', 'белсенді', 'көңілді', 'қозғал'])
                 ? 'active'
-                : has(['нов', 'необычн', 'попробова', 'удиви'])
+                : has(['нов', 'необычн', 'попробова', 'удиви', 'жаңа', 'ерекше', 'таң қалдыр'])
                     ? 'novelty'
                     : null;
     if (mood != null) {
       params.add(IntentParam.of(ParamType.mood, mood));
     }
 
-    if (has(['рядом', 'недалеко', 'поблизости', 'возле'])) {
+    if (has(['рядом', 'недалеко', 'поблизости', 'возле', 'жақын', 'маңында', 'қасында'])) {
       params.add(IntentParam.of(ParamType.location, 'near'));
-    } else if (has(['центр'])) {
+    } else if (has(['центр', 'орталық'])) {
       params.add(IntentParam.of(ParamType.location, 'center'));
     } else {
       params.add(IntentParam.of(ParamType.location, 'near', inferred: true));
@@ -129,9 +127,9 @@ class MockSearchService implements SearchService {
     return SearchIntent(query: query.trim(), params: params);
   }
 
-  /// «до 10 000», «10000 ₸», «15 тыс», «8к». Время вида «19:00» пропускается.
+  /// «до 10 000», «10000 ₸», «15 тыс», «8к», «10 мың». Время вида «19:00» пропускается.
   int? _amount(String q) {
-    final pattern = RegExp(r'(\d[\d\s ]*\d|\d)(\s*(тыс|к|k))?');
+    final pattern = RegExp(r'(\d[\d\s ]*\d|\d)(\s*(тыс|мың|к|k))?');
     for (final match in pattern.allMatches(q)) {
       final end = match.end;
       if (end < q.length && q[end] == ':') {
@@ -269,34 +267,41 @@ class MockSearchService implements SearchService {
       return null;
     }
     if (price == 0) {
-      return 'бесплатно';
+      return _t('бесплатно', 'тегін');
     }
     if (price <= budget * 0.6) {
-      return 'дешевле твоего бюджета';
+      return _t('дешевле твоего бюджета', 'бюджетіңнен арзан');
     }
-    return 'в рамках бюджета';
+    return _t('в рамках бюджета', 'бюджетке сай');
   }
 
   List<String> _placeDetails(Place p, Occasion? occasion, int? budget) {
     final occasionPhrase = switch (occasion) {
-      Occasion.date => 'хорошо для свидания',
-      Occasion.friends => 'удобно компанией',
-      Occasion.work => 'можно спокойно поработать',
-      Occasion.family => 'подойдёт всей семьёй',
-      Occasion.solo => 'приятно провести время одному',
+      Occasion.date => _t('хорошо для свидания', 'кездесуге жақсы'),
+      Occasion.friends => _t('удобно компанией', 'достармен баруға ыңғайлы'),
+      Occasion.work => _t('можно спокойно поработать', 'тыныш жұмыс істеуге болады'),
+      Occasion.family => _t('подойдёт всей семьёй', 'бүкіл отбасыға лайық'),
+      Occasion.solo => _t('приятно провести время одному', 'жалғыз уақыт өткізуге жақсы'),
       null => null,
     };
     return [
       _join(p.pitch, occasionPhrase),
       if (budget != null)
         p.isFree
-            ? 'Бесплатно — бюджет не тратится'
-            : '${Fmt.approxTenge(p.averageCheck)} на человека — '
-                'в рамках твоих ${Fmt.tenge(budget)}',
+            ? _t('Бесплатно — бюджет не тратится', 'Тегін — бюджет жұмсалмайды')
+            : _t(
+                '${Fmt.approxTenge(p.averageCheck)} на человека — '
+                    'в рамках твоих ${Fmt.tenge(budget)}',
+                'Бір адамға ${Fmt.approxTenge(p.averageCheck)} — '
+                    'сенің ${Fmt.tenge(budget)} бюджетіңе сай',
+              ),
       if (p.bookingType == BookingType.table)
-        'Есть свободные столики сегодня с 19:00'
+        _t('Есть свободные столики сегодня с 19:00', 'Бүгін 19:00-ден бос үстелдер бар')
       else
-        '${Fmt.distance(p.distanceKm)} от тебя · ${p.taxiMinutes} мин на такси',
+        _t(
+          '${Fmt.distance(p.distanceKm)} от тебя · ${p.taxiMinutes} мин на такси',
+          'Саған дейін ${Fmt.distance(p.distanceKm)} · таксимен ${p.taxiMinutes} мин',
+        ),
     ];
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/widgets/pressable.dart';
@@ -58,7 +59,7 @@ class MiniMap extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Маршрут',
+                          context.l10n.route,
                           style: AppText.captionStrong.copyWith(
                             color: AppColors.primaryInk,
                           ),

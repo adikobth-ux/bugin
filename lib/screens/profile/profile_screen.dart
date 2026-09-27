@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_language.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
@@ -18,11 +19,7 @@ import 'package:bugin/widgets/layout.dart';
 import 'package:bugin/widgets/pressable.dart';
 import 'package:bugin/widgets/snack.dart';
 
-const _notificationLabels = {
-  'events': ('Новые события', 'По твоим интересам'),
-  'bookings': ('Напоминания', 'О бронях и билетах'),
-  'promo': ('Акции', 'Скидки и спецпредложения партнёров'),
-};
+const _chevron = Icon(Icons.chevron_right_rounded, color: AppColors.inkSecondary);
 
 /// Профиль без повторов: у каждого действия одно место.
 class ProfileScreen extends StatelessWidget {
@@ -31,16 +28,19 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
+    final l10n = context.l10n;
     return TabPage(
       child: ListenableBuilder(
         listenable: Listenable.merge([
           services.profile,
           services.favorites,
           services.state.city,
+          services.state.language,
         ]),
         builder: (context, _) {
           final profile = services.profile.profile;
           final favorites = services.favorites;
+          final language = services.state.language.value;
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             physics: const BouncingScrollPhysics(),
@@ -49,14 +49,16 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _TapCard(
                 onTap: () => _editInterests(context),
-                semanticLabel: 'Изменить интересы',
+                semanticLabel: l10n.profile.editInterests,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Expanded(child: Text('Что тебе нравится', style: AppText.titleSmall)),
-                        Icon(Icons.chevron_right_rounded, color: AppColors.inkSecondary),
+                        Expanded(
+                          child: Text(l10n.profile.interestsTitle, style: AppText.titleSmall),
+                        ),
+                        _chevron,
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -74,7 +76,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _TapCard(
                 onTap: () => _editBudget(context),
-                semanticLabel: 'Изменить бюджет',
+                semanticLabel: l10n.profile.editBudget,
                 child: Row(
                   children: [
                     const IconWell(
@@ -88,16 +90,16 @@ class ProfileScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Обычно трачу', style: AppText.caption),
+                          Text(l10n.profile.usuallySpend, style: AppText.caption),
                           const SizedBox(height: 2),
                           Text(
-                            '${Fmt.upToTenge(profile.typicalBudget)} на человека',
+                            l10n.profile.perPerson(l10n.upToTenge(profile.typicalBudget)),
                             style: AppText.titleSmall,
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right_rounded, color: AppColors.inkSecondary),
+                    _chevron,
                   ],
                 ),
               ),
@@ -105,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
               _StatsGrid(
                 stats: [
                   _Stat(
-                    'Места',
+                    l10n.label(FavoritesSection.places),
                     favorites.count(FavoriteKind.place),
                     Icons.place_outlined,
                     () => AppNavigator.goToTab(
@@ -115,7 +117,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   _Stat(
-                    'События',
+                    l10n.label(FavoritesSection.events),
                     favorites.count(FavoriteKind.event),
                     Icons.confirmation_number_outlined,
                     () => AppNavigator.goToTab(
@@ -125,7 +127,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   _Stat(
-                    'Сценарии',
+                    l10n.label(FavoritesSection.scenarios),
                     favorites.count(FavoriteKind.scenario),
                     Icons.auto_awesome,
                     () => AppNavigator.goToTab(
@@ -135,7 +137,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   _Stat(
-                    'Запросы',
+                    l10n.profile.queries,
                     profile.searchCount,
                     Icons.history_rounded,
                     () => AppNavigator.openSearch(context),
@@ -146,35 +148,41 @@ class ProfileScreen extends StatelessWidget {
               InfoCard(
                 children: [
                   InfoRow.text(
+                    icon: Icons.language_rounded,
+                    title: l10n.profile.language,
+                    subtitle: language.nativeName,
+                    trailing: _chevron,
+                    onTap: () => _pickLanguage(context),
+                  ),
+                  InfoRow.text(
                     icon: Icons.notifications_none_rounded,
-                    title: 'Уведомления',
-                    subtitle: 'События и напоминания',
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.inkSecondary,
-                    ),
+                    title: l10n.profile.notifications,
+                    subtitle: l10n.profile.notificationsHint,
+                    trailing: _chevron,
                     onTap: () => _editNotifications(context),
                   ),
                   InfoRow.text(
                     icon: Icons.privacy_tip_outlined,
-                    title: 'Конфиденциальность',
-                    subtitle: 'Данные и безопасность',
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.inkSecondary,
-                    ),
-                    onTap: () => showDemoSnack(context, 'раздел появится вместе с аккаунтом'),
+                    title: l10n.profile.privacy,
+                    subtitle: l10n.profile.privacyHint,
+                    trailing: _chevron,
+                    onTap: () => showDemoSnack(context, l10n.profile.privacyDemo),
                   ),
                   InfoRow.text(
                     icon: Icons.help_outline_rounded,
-                    title: 'Помощь и поддержка',
-                    subtitle: 'Вопросы и связь с нами',
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.inkSecondary,
-                    ),
-                    onTap: () => showDemoSnack(context, 'чат поддержки подключим позже'),
+                    title: l10n.profile.help,
+                    subtitle: l10n.profile.helpHint,
+                    trailing: _chevron,
+                    onTap: () => showDemoSnack(context, l10n.profile.helpDemo),
                   ),
+                  if (services.canResetData)
+                    InfoRow.text(
+                      icon: Icons.restart_alt_rounded,
+                      title: l10n.profile.resetData,
+                      subtitle: l10n.profile.resetDataHint,
+                      trailing: _chevron,
+                      onTap: () => _resetData(context),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -182,16 +190,16 @@ class ProfileScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Pressable(
                   onTap: () => _logout(context),
-                  child: const SizedBox(
+                  child: SizedBox(
                     height: 48,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.logout_rounded, size: 18, color: AppColors.danger),
-                        SizedBox(width: 10),
+                        const Icon(Icons.logout_rounded, size: 18, color: AppColors.danger),
+                        const SizedBox(width: 10),
                         Text(
-                          'Выйти из аккаунта',
-                          style: TextStyle(
+                          l10n.profile.logout,
+                          style: const TextStyle(
                             fontFamily: AppText.family,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -204,7 +212,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Center(child: Text('Bugin · прототип 0.1', style: AppText.micro)),
+              Center(child: Text(l10n.profile.footer, style: AppText.micro)),
             ],
           );
         },
@@ -214,11 +222,12 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _editInterests(BuildContext context) async {
     final store = AppScope.of(context).profile;
+    final l10n = context.l10n;
     final selected = Set<Interest>.of(store.profile.interests);
     final result = await showAppSheet<List<Interest>>(
       context,
-      title: 'Что тебе нравится',
-      subtitle: 'Учту в рекомендациях и подборках',
+      title: l10n.profile.interestsTitle,
+      subtitle: l10n.profile.interestsHint,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -229,7 +238,7 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 for (final interest in Interest.values)
                   SelectChip(
-                    label: interest.label,
+                    label: l10n.label(interest),
                     icon: Visuals.interestIcon(interest),
                     selected: selected.contains(interest),
                     onTap: () => setSheetState(() {
@@ -242,7 +251,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             PrimaryButton(
-              label: 'Сохранить',
+              label: l10n.save,
               onPressed: selected.isEmpty
                   ? null
                   : () => Navigator.of(sheetContext).pop(
@@ -261,17 +270,18 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _editBudget(BuildContext context) async {
     final store = AppScope.of(context).profile;
+    final l10n = context.l10n;
     var value = store.profile.typicalBudget.toDouble();
     final result = await showAppSheet<int>(
       context,
-      title: 'Обычный бюджет',
-      subtitle: 'Сколько ты обычно тратишь на человека за выход',
+      title: l10n.profile.budgetTitle,
+      subtitle: l10n.profile.budgetHint,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              Fmt.upToTenge(value.round()),
+              l10n.upToTenge(value.round()),
               textAlign: TextAlign.center,
               style: AppText.h1,
             ),
@@ -281,7 +291,7 @@ class ProfileScreen extends StatelessWidget {
               min: 3000,
               max: 50000,
               divisions: 47,
-              semanticFormatterCallback: (v) => Fmt.upToTenge(v.round()),
+              semanticFormatterCallback: (v) => l10n.upToTenge(v.round()),
               onChanged: (v) => setSheetState(() => value = (v / 1000).round() * 1000.0),
             ),
             const Row(
@@ -293,7 +303,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             PrimaryButton(
-              label: 'Сохранить',
+              label: l10n.save,
               onPressed: () => Navigator.of(sheetContext).pop(value.round()),
             ),
           ],
@@ -308,15 +318,17 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _editNotifications(BuildContext context) {
     final store = AppScope.of(context).profile;
+    final l10n = context.l10n;
+    final options = l10n.profile.notificationOptions;
     return showAppSheet<void>(
       context,
-      title: 'Уведомления',
+      title: l10n.profile.notifications,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           final values = store.profile.notifications;
           return Column(
             children: [
-              for (final entry in _notificationLabels.entries)
+              for (final entry in options.entries)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
@@ -348,29 +360,89 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// Язык меняется сразу: приложение пересоберётся на нём, вкладка останется.
+  Future<void> _pickLanguage(BuildContext context) async {
+    final state = AppScope.of(context).state;
+    final current = state.language.value;
+    final picked = await showAppSheet<AppLanguage>(
+      context,
+      title: context.l10n.profile.languageTitle,
+      builder: (sheetContext) => Column(
+        children: [
+          for (final language in AppLanguage.values)
+            SheetOption(
+              label: language.nativeName,
+              selected: language == current,
+              onTap: () => Navigator.of(sheetContext).pop(language),
+            ),
+        ],
+      ),
+    );
+    if (picked != null && picked != state.language.value) {
+      HapticFeedback.selectionClick();
+      state.language.value = picked;
+    }
+  }
+
+  /// Возвращает избранное, профиль и историю поиска к начальным (только mock).
+  Future<void> _resetData(BuildContext context) async {
+    final services = AppScope.of(context);
+    final l10n = context.l10n.profile;
+    final confirmed = await _confirm(
+      context,
+      title: l10n.resetConfirmTitle,
+      message: l10n.resetConfirmMessage,
+      action: l10n.resetConfirm,
+    );
+    if (!confirmed) {
+      return;
+    }
+    services.resetData();
+    HapticFeedback.lightImpact();
+    if (context.mounted) {
+      showAppSnack(context, l10n.resetDone);
+    }
+  }
+
   Future<void> _logout(BuildContext context) async {
+    final l10n = context.l10n.profile;
+    final confirmed = await _confirm(
+      context,
+      title: l10n.logoutTitle,
+      message: l10n.logoutMessage,
+      action: l10n.logoutConfirm,
+    );
+    if (confirmed && context.mounted) {
+      showDemoSnack(context, l10n.logoutDemo);
+    }
+  }
+
+  /// Диалог подтверждения: true — если нажали [action].
+  Future<bool> _confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String action,
+  }) async {
+    final cancel = context.l10n.cancel;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Выйти из аккаунта?'),
-        content: const Text(
-          'В прототипе авторизации ещё нет — выход появится вместе с ней.',
-        ),
+        title: Text(title),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Отмена'),
+            child: Text(cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Выйти', style: TextStyle(color: AppColors.danger)),
+            child: Text(action, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
     );
-    if (confirmed == true && context.mounted) {
-      showDemoSnack(context, 'выход подключим вместе с авторизацией');
-    }
+    return confirmed == true;
   }
 }
 
@@ -405,8 +477,8 @@ class _Header extends StatelessWidget {
                 right: 0,
                 bottom: 0,
                 child: Pressable(
-                  onTap: () => showDemoSnack(context, 'смена фото появится вместе с аккаунтом'),
-                  semanticLabel: 'Изменить фото',
+                  onTap: () => showDemoSnack(context, context.l10n.profile.changePhotoDemo),
+                  semanticLabel: context.l10n.profile.changePhoto,
                   child: Container(
                     width: 30,
                     height: 30,
@@ -494,7 +566,10 @@ class _InterestChip extends StatelessWidget {
         children: [
           Icon(Visuals.interestIcon(interest), size: 16, color: tone.foreground),
           const SizedBox(width: 6),
-          Text(interest.label, style: AppText.captionStrong.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            context.l10n.label(interest),
+            style: AppText.captionStrong.copyWith(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

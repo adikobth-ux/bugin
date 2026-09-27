@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/services/app_services.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/theme/app_colors.dart';
@@ -81,7 +82,9 @@ class _FavoriteButtonState extends State<FavoriteButton> {
         return Pressable(
           onTap: () => _toggle(store),
           pressedScale: 0.9,
-          semanticLabel: active ? 'Убрать из избранного' : 'Добавить в избранное',
+          semanticLabel: active
+              ? context.l10n.removeFromFavorites
+              : context.l10n.addToFavorites,
           child: SizedBox.square(
             dimension: hit,
             child: Center(

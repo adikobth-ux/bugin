@@ -13,4 +13,8 @@ abstract interface class EveningPlanner {
 
   /// Готовый сценарий для блока «Для тебя сегодня».
   Future<Scenario> featured();
+
+  /// Тот же план на текущем языке приложения — для сохранённых сценариев
+  /// после смены языка. Точки, время и цены не меняются.
+  Future<Scenario> localize(Scenario scenario);
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
+
 /// Короткое сообщение внизу экрана с необязательным действием («Вернуть»).
 void showAppSnack(
   BuildContext context,
@@ -23,4 +25,4 @@ void showAppSnack(
 
 /// Сообщение для функций, которые появятся вместе с backend.
 void showDemoSnack(BuildContext context, String message) =>
-    showAppSnack(context, 'Демо: $message');
+    showAppSnack(context, context.l10n.demo(message));

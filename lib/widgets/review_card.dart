@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -56,7 +57,7 @@ class ReviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(review.author, style: AppText.label.copyWith(fontWeight: FontWeight.w700)),
-                    Text(Fmt.ago(review.date), style: AppText.micro),
+                    Text(context.l10n.ago(review.date), style: AppText.micro),
                   ],
                 ),
               ),

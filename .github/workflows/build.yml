@@ -3,7 +3,6 @@ name: Build
 # Проверка кода, тесты, APK для Android и веб-версия на GitHub Pages.
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 

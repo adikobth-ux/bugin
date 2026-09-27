@@ -1,52 +1,57 @@
 import 'package:bugin/core/app_images.dart';
+import 'package:bugin/data/mock_catalog.dart';
 import 'package:bugin/data/mock_places.dart';
+import 'package:bugin/l10n/app_language.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/evening_planner.dart';
 import 'package:bugin/services/mock/simulated_network.dart';
 
 /// Вариант для роли в плане.
 class _Candidate {
-  const _Candidate(this.placeId, this.kindLabel, this.durationMinutes, {this.cost});
+  const _Candidate(this.placeId, this.kind, this.durationMinutes, {this.cost});
 
   final String placeId;
-  final String kindLabel;
+
+  /// Код занятия — см. [MockEveningPlanner._kindLabel].
+  final String kind;
   final int durationMinutes;
 
   /// Если null — берётся средний чек места.
   final int? cost;
 }
 
-/// Собирает план по правилам: шаблон по настроению → первый вариант,
-/// который укладывается в остаток бюджета → расписание с переездами.
+/// Собирает план по правилам: шаблон по настроению → варианты,
+/// которые укладываются в бюджет → расписание с переездами.
+/// Тексты плана — на текущем языке приложения.
 class MockEveningPlanner implements EveningPlanner {
-  MockEveningPlanner(List<Place> places, {required this.latency})
-      : _places = {for (final p in places) p.id: p} {
-    _library = [
-      _compose(
-        const EveningRequest(),
-        id: 'calm_evening_pair',
-        image: AppImages.scenarioEvening,
-      ),
-      _workDay(),
-      _compose(
-        const EveningRequest(
-          company: Company.friends,
-          day: PlanDay.weekend,
-          startMinutes: 18 * 60,
-          mood: Mood.active,
-        ),
-        id: 'active_saturday',
-        title: 'Активная суббота',
-      ),
-    ];
-  }
+  MockEveningPlanner(this._catalog, this._language, {required this.latency});
 
-  final Map<String, Place> _places;
+  final MockCatalog _catalog;
+  final CurrentLanguage _language;
   final Duration latency;
-  late final List<Scenario> _library;
 
-  /// Готовые сценарии (для избранного и главной).
-  List<Scenario> get library => List.unmodifiable(_library);
+  AppStrings get _l10n => AppStrings.forLanguage(_language());
+  String _t(String ru, String kk) => _l10n.tr(ru, kk);
+  Place? _place(String id) => _catalog.place(_language(), id);
+
+  static const calmEveningId = 'calm_evening_pair';
+  static const workDayId = 'work_day';
+  static const activeSaturdayId = 'active_saturday';
+
+  static const _activeSaturday = EveningRequest(
+    company: Company.friends,
+    day: PlanDay.weekend,
+    startMinutes: 18 * 60,
+    mood: Mood.active,
+  );
+
+  /// Готовые сценарии на текущем языке (для избранного и главной).
+  List<Scenario> get library => [
+        _compose(const EveningRequest(), id: calmEveningId, image: AppImages.scenarioEvening),
+        _workDay(),
+        _compose(_activeSaturday, id: activeSaturdayId),
+      ];
 
   static const _templates = <Mood, List<StopRole>>{
     Mood.calm: [StopRole.coffee, StopRole.walk, StopRole.dinner],
@@ -57,32 +62,45 @@ class MockEveningPlanner implements EveningPlanner {
 
   static const _candidates = <StopRole, List<_Candidate>>{
     StopRole.coffee: [
-      _Candidate(MockPlaces.coffeeLab, 'Кофе и десерт', 60),
-      _Candidate(MockPlaces.theGarden, 'Кофе и десерт', 60),
+      _Candidate(MockPlaces.coffeeLab, 'coffee', 60),
+      _Candidate(MockPlaces.theGarden, 'coffee', 60),
     ],
     StopRole.walk: [
-      _Candidate(MockPlaces.esilEmbankment, 'Прогулка', 45),
+      _Candidate(MockPlaces.esilEmbankment, 'walk', 45),
     ],
     StopRole.dinner: [
-      _Candidate(MockPlaces.theGarden, 'Ужин', 105),
-      _Candidate(MockPlaces.skyLounge, 'Ужин с видом', 105),
+      _Candidate(MockPlaces.theGarden, 'dinner', 105),
+      _Candidate(MockPlaces.skyLounge, 'dinner_view', 105),
     ],
     StopRole.activity: [
-      _Candidate(MockPlaces.galaxyBowling, 'Боулинг', 120),
-      _Candidate(MockPlaces.lunaCinema, 'Кино', 150),
+      _Candidate(MockPlaces.galaxyBowling, 'bowling', 120),
+      _Candidate(MockPlaces.lunaCinema, 'cinema', 150),
     ],
     StopRole.culture: [
-      _Candidate(MockPlaces.bastauGallery, 'Выставка', 75),
-      _Candidate(MockPlaces.lunaCinema, 'Кино', 150),
+      _Candidate(MockPlaces.bastauGallery, 'exhibition', 75),
+      _Candidate(MockPlaces.lunaCinema, 'cinema', 150),
     ],
     StopRole.novelty: [
-      _Candidate(MockPlaces.holstStudio, 'Мастер-класс', 120),
-      _Candidate(MockPlaces.galaxyBowling, 'Боулинг', 120),
+      _Candidate(MockPlaces.holstStudio, 'workshop', 120),
+      _Candidate(MockPlaces.galaxyBowling, 'bowling', 120),
     ],
     StopRole.work: [
-      _Candidate(MockPlaces.coffeeLab, 'Кофе и работа', 240, cost: 5000),
+      _Candidate(MockPlaces.coffeeLab, 'coffee_work', 240, cost: 5000),
     ],
   };
+
+  String _kindLabel(String kind) => switch (kind) {
+        'coffee' => _t('Кофе и десерт', 'Кофе мен десерт'),
+        'walk' => _t('Прогулка', 'Серуен'),
+        'dinner' => _t('Ужин', 'Кешкі ас'),
+        'dinner_view' => _t('Ужин с видом', 'Көрінісі әдемі кешкі ас'),
+        'bowling' => _t('Боулинг', 'Боулинг'),
+        'cinema' => _t('Кино', 'Кино'),
+        'exhibition' => _t('Выставка', 'Көрме'),
+        'workshop' => _t('Мастер-класс', 'Шеберлік сабағы'),
+        'coffee_work' => _t('Кофе и работа', 'Кофе және жұмыс'),
+        _ => kind,
+      };
 
   @override
   Future<Scenario> plan(EveningRequest request) => simulateNetwork(
@@ -93,9 +111,58 @@ class MockEveningPlanner implements EveningPlanner {
   @override
   Future<Scenario> featured() => simulateNetwork(latency, () {
         final hour = DateTime.now().hour;
-        final id = hour < 16 ? 'work_day' : 'calm_evening_pair';
-        return _library.firstWhere((s) => s.id == id);
+        return hour < 16
+            ? _workDay()
+            : _compose(
+                const EveningRequest(),
+                id: calmEveningId,
+                image: AppImages.scenarioEvening,
+              );
       });
+
+  @override
+  Future<Scenario> localize(Scenario scenario) =>
+      simulateNetwork(latency, () => _localized(scenario));
+
+  /// Тот же план (точки, время, цены), но тексты — на текущем языке.
+  Scenario _localized(Scenario scenario) {
+    final stops = [for (final stop in scenario.stops) _relabel(stop)];
+    final request = scenario.request;
+    return switch (scenario.id) {
+      workDayId => _workDay().copyWith(stops: stops, legs: scenario.legs),
+      activeSaturdayId => scenario.copyWith(title: _activeSaturdayTitle, stops: stops),
+      _ when request != null => scenario.copyWith(
+          title: _l10n.planTitle(request.mood, request.company),
+          stops: stops,
+        ),
+      _ => scenario.copyWith(stops: stops),
+    };
+  }
+
+  PlanStop _relabel(PlanStop stop) {
+    final place = _place(stop.placeId);
+    if (place == null) {
+      return stop;
+    }
+    return PlanStop(
+      role: stop.role,
+      placeId: stop.placeId,
+      kind: stop.kind,
+      title: place.name,
+      kindLabel: _kindLabel(stop.kind),
+      startMinutes: stop.startMinutes,
+      durationMinutes: stop.durationMinutes,
+      cost: stop.cost,
+      routeLabel: _routeLabel(place),
+      rating: stop.rating,
+      image: stop.image,
+    );
+  }
+
+  String? _routeLabel(Place place) =>
+      place.category == PlaceCategory.park ? _t('набережная', 'жағалау') : null;
+
+  String get _activeSaturdayTitle => _t('Активная суббота', 'Белсенді сенбі');
 
   @override
   Future<List<PlanStop>> alternatives(Scenario scenario, int index) =>
@@ -139,7 +206,6 @@ class MockEveningPlanner implements EveningPlanner {
   Scenario _compose(
     EveningRequest request, {
     required String id,
-    String? title,
     String? image,
   }) {
     final roles = _templates[request.mood] ?? _templates[Mood.calm]!;
@@ -148,7 +214,9 @@ class MockEveningPlanner implements EveningPlanner {
     final scheduled = _schedule(chosen, request.startMinutes);
     return Scenario(
       id: id,
-      title: title ?? '${request.mood.adjective} вечер ${request.company.titleSuffix}',
+      title: id == activeSaturdayId
+          ? _activeSaturdayTitle
+          : _l10n.planTitle(request.mood, request.company),
       stops: scheduled.stops,
       legs: scheduled.legs,
       image: image,
@@ -204,30 +272,31 @@ class MockEveningPlanner implements EveningPlanner {
     final candidate = _candidates[StopRole.work]!.first;
     final stop = _toStop(StopRole.work, candidate, 10 * 60)!;
     return Scenario(
-      id: 'work_day',
-      title: 'Спокойный день',
-      subtitle: 'Кофейня → работа',
+      id: workDayId,
+      title: _t('Спокойный день', 'Тыныш күн'),
+      subtitle: _t('Кофейня → работа', 'Кофехана → жұмыс'),
       image: AppImages.scenarioWorkDay,
       stops: [stop],
       legs: const [],
-      tags: const ['Wi-Fi', 'Розетки', 'Тихо'],
+      tags: ['Wi-Fi', _t('Розетки', 'Розеткалар'), _t('Тихо', 'Тыныш')],
     );
   }
 
   PlanStop? _toStop(StopRole role, _Candidate candidate, int start) {
-    final place = _places[candidate.placeId];
+    final place = _place(candidate.placeId);
     if (place == null) {
       return null;
     }
     return PlanStop(
       role: role,
       placeId: place.id,
+      kind: candidate.kind,
       title: place.name,
-      kindLabel: candidate.kindLabel,
+      kindLabel: _kindLabel(candidate.kind),
       startMinutes: start,
       durationMinutes: candidate.durationMinutes,
       cost: candidate.cost ?? place.averageCheck,
-      routeLabel: place.category == PlaceCategory.park ? 'набережная' : null,
+      routeLabel: _routeLabel(place),
       rating: place.isFree ? null : place.rating,
       image: place.cover,
     );
@@ -255,8 +324,8 @@ class MockEveningPlanner implements EveningPlanner {
   }
 
   TravelLeg _leg(String fromId, String toId) {
-    final from = _places[fromId];
-    final to = _places[toId];
+    final from = _place(fromId);
+    final to = _place(toId);
     if (from == null || to == null) {
       return const TravelLeg(TravelMode.taxi, 10);
     }
@@ -280,11 +349,12 @@ class MockEveningPlanner implements EveningPlanner {
 
   bool _noCinema(EveningRequest? request) {
     final wishes = request?.wishes.toLowerCase() ?? '';
-    return wishes.contains('без кино');
+    const phrases = ['без кино', 'киносыз', 'кино емес', 'кинодан басқа', 'кино керек емес'];
+    return phrases.any(wishes.contains);
   }
 
   bool _isCinema(String placeId) =>
-      _places[placeId]?.category == PlaceCategory.cinema;
+      _place(placeId)?.category == PlaceCategory.cinema;
 
   static int _roundUp15(int minutes) => ((minutes + 14) ~/ 15) * 15;
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_routes.dart';
 import 'package:bugin/services/app_services.dart';
@@ -101,6 +101,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
   @override
   Widget build(BuildContext context) {
     final intent = _intent;
+    final l10n = context.l10n;
+    final s = l10n.search;
     return AnnotatedRegion(
       value: AppTheme.overlayOnLight,
       child: Scaffold(
@@ -109,11 +111,11 @@ class _ProcessingScreenState extends State<ProcessingScreen>
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: AppBackButton(
                     icon: Icons.close_rounded,
-                    semanticLabel: 'Отменить поиск',
+                    semanticLabel: s.cancelSearch,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -127,7 +129,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Твой запрос', style: AppText.micro),
+                      Text(s.yourQuery, style: AppText.micro),
                       const SizedBox(height: 4),
                       Text(
                         widget.query,
@@ -173,14 +175,14 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Подбираю варианты',
+                  Text(
+                    s.processingTitle,
                     textAlign: TextAlign.center,
                     style: AppText.h1,
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Обычно это пара секунд',
+                  Text(
+                    s.processingHint,
                     textAlign: TextAlign.center,
                     style: AppText.caption,
                   ),
@@ -197,8 +199,8 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                       children: [
                         _StepRow(
                           state: _stateOf(_Step.understanding),
-                          label: 'Понял запрос',
-                          activeLabel: 'Разбираю запрос',
+                          label: s.stepUnderstood,
+                          activeLabel: s.stepUnderstanding,
                           child: intent == null
                               ? null
                               : Wrap(
@@ -206,22 +208,21 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                                   runSpacing: 6,
                                   children: [
                                     for (final p in intent.params)
-                                      MiniTag(p.label, tone: Visuals.param(p).$2),
+                                      MiniTag(l10n.paramLabel(p), tone: Visuals.param(p).$2),
                                   ],
                                 ),
                         ),
                         const SizedBox(height: 14),
                         _StepRow(
                           state: _stateOf(_Step.searching),
-                          label:
-                              'Нашёл $_found ${Fmt.plural(_found, 'вариант', 'варианта', 'вариантов')} рядом',
-                          activeLabel: 'Ищу подходящие места и события',
+                          label: s.stepFound(_found),
+                          activeLabel: s.stepSearching,
                         ),
                         const SizedBox(height: 14),
                         _StepRow(
                           state: _stateOf(_Step.ranking),
-                          label: 'Выбираю лучшее под твой бюджет',
-                          activeLabel: 'Выбираю лучшее под твой бюджет',
+                          label: s.stepRanking,
+                          activeLabel: s.stepRanking,
                         ),
                       ],
                     ),

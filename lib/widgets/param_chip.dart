@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -92,6 +93,8 @@ class ParamChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final label = l10n.paramLabel(param);
     final (icon, tone) = Visuals.param(param);
     final content = Container(
       constraints: const BoxConstraints(minHeight: 36),
@@ -105,7 +108,7 @@ class ParamChip extends StatelessWidget {
         children: [
           Pressable(
             onTap: onEdit,
-            semanticLabel: 'Изменить: ${param.label}',
+            semanticLabel: l10n.editParam(label),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -113,7 +116,7 @@ class ParamChip extends StatelessWidget {
                 const SizedBox(width: 6),
                 ExcludeSemantics(
                   child: Text(
-                    param.label,
+                    label,
                     style: AppText.captionStrong.copyWith(
                       fontWeight: FontWeight.w600,
                       color: param.inferred ? AppColors.inkBody : AppColors.ink,
@@ -125,7 +128,7 @@ class ParamChip extends StatelessWidget {
           ),
           Pressable(
             onTap: onRemove,
-            semanticLabel: 'Убрать: ${param.label}',
+            semanticLabel: l10n.removeParam(label),
             pressedScale: 0.85,
             child: const SizedBox(
               width: 32,
@@ -165,7 +168,7 @@ class AddParamChip extends StatelessWidget {
               const Icon(Icons.add_rounded, size: 16, color: AppColors.primaryInk),
               const SizedBox(width: 4),
               Text(
-                'Уточнить',
+                context.l10n.refine,
                 style: AppText.captionStrong.copyWith(color: AppColors.primaryInk),
               ),
             ],

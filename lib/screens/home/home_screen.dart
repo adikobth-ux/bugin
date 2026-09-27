@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
+import 'package:bugin/l10n/sections/home_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
@@ -28,23 +30,24 @@ class _Intent {
   final String query;
 }
 
-const _intents = [
-  _Intent(
-    'Свидание',
-    Icons.favorite_border_rounded,
-    Tone.pink,
-    'Свидание сегодня вечером, красиво и не слишком дорого',
-  ),
-  _Intent('Кофе', Icons.local_cafe_outlined, Tone.mint, 'Где выпить хороший кофе рядом'),
-  _Intent(
-    'Активно',
-    Icons.fitness_center_rounded,
-    Tone.violet,
-    'Хочу чего-нибудь активного с друзьями',
-  ),
-  _Intent('Что-то новое', Icons.lightbulb_outline, Tone.peach, 'Хочу попробовать что-то новое'),
-  _Intent('Поработать', Icons.laptop_outlined, Tone.blue, 'Тихое кафе, чтобы поработать'),
-];
+/// Быстрые намерения на текущем языке: подпись и запрос — из раздела текстов.
+List<_Intent> _intents(HomeStrings s) => [
+      _Intent(
+        s.intentDate,
+        Icons.favorite_border_rounded,
+        Tone.pink,
+        s.intentDateQuery,
+      ),
+      _Intent(s.intentCoffee, Icons.local_cafe_outlined, Tone.mint, s.intentCoffeeQuery),
+      _Intent(
+        s.intentActive,
+        Icons.fitness_center_rounded,
+        Tone.violet,
+        s.intentActiveQuery,
+      ),
+      _Intent(s.intentNovelty, Icons.lightbulb_outline, Tone.peach, s.intentNoveltyQuery),
+      _Intent(s.intentWork, Icons.laptop_outlined, Tone.blue, s.intentWorkQuery),
+    ];
 
 class _HomeData {
   const _HomeData(this.nearby, this.scenario);
@@ -89,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
+    final s = context.l10n.home;
     final name = services.profile.profile.name;
     final isEvening = DateTime.now().hour >= 17;
 
@@ -125,11 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Semantics(
                       header: true,
-                      child: Text('Привет, $name!', style: AppText.display),
+                      child: Text(s.greeting(name), style: AppText.display),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isEvening ? 'Куда сходим вечером?' : 'Чем займёмся сегодня?',
+                      isEvening ? s.eveningQuestion : s.dayQuestion,
                       style: AppText.body.copyWith(
                         fontSize: 16,
                         color: AppColors.inkSecondary,
@@ -152,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.only(top: 16),
                 child: ChipRow(
                   children: [
-                    for (final intent in _intents)
+                    for (final intent in _intents(s))
                       IntentChip(
                         icon: intent.icon,
                         label: intent.label,
@@ -193,6 +197,7 @@ class _EveningBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n.home;
     return Pressable(
       onTap: onTap,
       pressedScale: 0.98,
@@ -219,12 +224,12 @@ class _EveningBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Собрать мне вечер',
+                    s.eveningBannerTitle,
                     style: AppText.title.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Места, время и бюджет — одним планом',
+                    s.eveningBannerSubtitle,
                     style: AppText.caption.copyWith(color: AppColors.onImageText),
                   ),
                 ],
@@ -265,12 +270,13 @@ class _HomeFeed extends StatelessWidget {
         child: ErrorState(onRetry: onRetry),
       );
     }
+    final s = context.l10n.home;
     final data = snapshot.data;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
-          title: 'Для тебя сегодня',
+          title: s.forYouToday,
           onAction: () => AppNavigator.goToTab(
             context,
             AppTab.favorites,
@@ -287,8 +293,8 @@ class _HomeFeed extends StatelessWidget {
                 ),
         ),
         SectionHeader(
-          title: 'Сейчас рядом',
-          onAction: () => AppNavigator.startSearch(context, 'Что интересного рядом'),
+          title: s.nearbyNow,
+          onAction: () => AppNavigator.startSearch(context, s.nearbyQuery),
         ),
         if (data == null)
           const _NearbySkeleton()

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
@@ -87,10 +88,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   void _remove(FavoriteKind kind, String id, String name) {
     final index = _store.remove(kind, id);
     HapticFeedback.lightImpact();
+    final l10n = context.l10n;
     showAppSnack(
       context,
-      '«$name» убрано из избранного',
-      actionLabel: 'Вернуть',
+      l10n.favorites.removed(name),
+      actionLabel: l10n.undo,
       onAction: () => _store.restore(kind, id, index),
     );
   }
@@ -98,10 +100,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   void _removeScenario(Scenario scenario) {
     final index = _store.remove(FavoriteKind.scenario, scenario.id);
     HapticFeedback.lightImpact();
+    final l10n = context.l10n;
     showAppSnack(
       context,
-      '«${scenario.title}» убран из избранного',
-      actionLabel: 'Вернуть',
+      l10n.favorites.scenarioRemoved(scenario.title),
+      actionLabel: l10n.undo,
       onAction: () => _store.restoreScenario(scenario, index),
     );
   }
@@ -109,6 +112,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context).state;
+    final l10n = context.l10n;
     return TabPage(
       child: ValueListenableBuilder<FavoritesSection>(
         valueListenable: state.favoritesSection,
@@ -119,7 +123,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Semantics(
                 header: true,
-                child: const Text('Избранное', style: AppText.display),
+                child: Text(l10n.favorites.title, style: AppText.display),
               ),
             ),
             Padding(
@@ -128,17 +132,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 items: [
                   SegmentItem(
                     value: FavoritesSection.places,
-                    label: FavoritesSection.places.label,
+                    label: l10n.label(FavoritesSection.places),
                     count: _store.count(FavoriteKind.place),
                   ),
                   SegmentItem(
                     value: FavoritesSection.events,
-                    label: FavoritesSection.events.label,
+                    label: l10n.label(FavoritesSection.events),
                     count: _store.count(FavoriteKind.event),
                   ),
                   SegmentItem(
                     value: FavoritesSection.scenarios,
-                    label: FavoritesSection.scenarios.label,
+                    label: l10n.label(FavoritesSection.scenarios),
                     count: _store.count(FavoriteKind.scenario),
                   ),
                 ],
@@ -200,13 +204,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
     final byId = {for (final p in loaded) p.id: p};
     final items = _store.placeIds.map((id) => byId[id]).whereType<Place>().toList();
+    final l10n = context.l10n;
     if (items.isEmpty) {
       return _empty(
         EmptyState(
           icon: Icons.place_outlined,
-          title: 'Пока нет мест',
-          message: 'Нажимай на сердечко на карточках — места появятся здесь',
-          actionLabel: 'Найти место',
+          title: l10n.favorites.noPlaces,
+          message: l10n.favorites.noPlacesMessage,
+          actionLabel: l10n.favorites.findPlace,
           onAction: () => AppNavigator.goToTab(context, AppTab.home),
         ),
       );
@@ -220,12 +225,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           placeholderTone: Visuals.placeTone(place.category),
           lines: [
             Text(
-              '${place.category.label} · ${Fmt.distance(place.distanceKm)}',
+              '${l10n.label(place.category)} · ${Fmt.distance(place.distanceKm)}',
               style: AppText.caption,
             ),
             MetaLine(
               rating: place.rating,
-              parts: [Fmt.averageCheck(place.averageCheck)],
+              parts: [l10n.averageCheck(place.averageCheck)],
             ),
           ],
           trailing: _RemoveHeart(
@@ -243,13 +248,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
     final byId = {for (final e in loaded) e.id: e};
     final items = _store.eventIds.map((id) => byId[id]).whereType<Event>().toList();
+    final l10n = context.l10n;
     if (items.isEmpty) {
       return _empty(
         EmptyState(
           icon: Icons.confirmation_number_outlined,
-          title: 'Пока нет событий',
-          message: 'Сохраняй концерты и выставки из афиши, чтобы не потерять',
-          actionLabel: 'Открыть афишу',
+          title: l10n.favorites.noEvents,
+          message: l10n.favorites.noEventsMessage,
+          actionLabel: l10n.favorites.openAfisha,
           onAction: () => AppNavigator.goToTab(context, AppTab.afisha),
         ),
       );
@@ -259,12 +265,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         MediaRowCard(
           image: event.image,
           title: event.title,
-          overline: Fmt.eventWhen(event.startsAt),
+          overline: l10n.eventWhen(event.startsAt),
           placeholderIcon: Visuals.eventIcon(event.category),
           placeholderTone: Visuals.eventTone(event.category),
           lines: [
             Text(
-              '${event.venueName} · ${Fmt.fromTenge(event.priceFrom)}',
+              '${event.venueName} · ${l10n.fromTenge(event.priceFrom)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppText.caption,
@@ -280,13 +286,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _scenariosList() {
     final items = _store.scenarios;
+    final l10n = context.l10n;
     if (items.isEmpty) {
       return _empty(
         EmptyState(
           icon: Icons.auto_awesome,
-          title: 'Пока нет сценариев',
-          message: 'Собери вечер и сохрани план, чтобы вернуться к нему',
-          actionLabel: 'Собрать вечер',
+          title: l10n.favorites.noScenarios,
+          message: l10n.favorites.noScenariosMessage,
+          actionLabel: l10n.favorites.planEvening,
           onAction: () => AppNavigator.openEveningForm(context),
         ),
       );
@@ -305,8 +312,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             Text(
               '${Fmt.approxTenge(scenario.totalCost)} · '
-              '${scenario.stops.length} '
-              '${Fmt.plural(scenario.stops.length, 'точка', 'точки', 'точек')}',
+              '${l10n.favorites.stopsCount(scenario.stops.length)}',
               style: AppText.captionStrong,
             ),
           ],
@@ -327,7 +333,7 @@ class _RemoveHeart extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       pressedScale: 0.85,
-      semanticLabel: 'Убрать из избранного',
+      semanticLabel: context.l10n.removeFromFavorites,
       child: const SizedBox.square(
         dimension: 44,
         child: Icon(Icons.favorite_rounded, size: 22, color: AppColors.primary),

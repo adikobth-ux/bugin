@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/widgets/buttons.dart';
@@ -66,11 +67,12 @@ class ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return EmptyState(
       icon: Icons.wifi_off_rounded,
-      title: 'Не получилось загрузить',
-      message: 'Проверь интернет и попробуй ещё раз',
-      actionLabel: 'Повторить',
+      title: l10n.loadErrorTitle,
+      message: l10n.loadErrorMessage,
+      actionLabel: l10n.retry,
       onAction: onRetry,
     );
   }

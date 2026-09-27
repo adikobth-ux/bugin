@@ -1,20 +1,16 @@
-import 'package:bugin/core/formatters.dart';
 import 'package:bugin/models/common.dart';
 import 'package:bugin/models/review.dart';
 
+/// Подписи категорий, удобств и других справочников — в `AppStrings.label`.
 enum PlaceCategory {
-  cafe('Кафе'),
-  coffeeShop('Кофейня'),
-  restaurant('Ресторан'),
-  bowling('Боулинг'),
-  cinema('Кино'),
-  park('Прогулка'),
-  gallery('Галерея'),
-  studio('Студия');
-
-  const PlaceCategory(this.label);
-
-  final String label;
+  cafe,
+  coffeeShop,
+  restaurant,
+  bowling,
+  cinema,
+  park,
+  gallery,
+  studio;
 
   static PlaceCategory parse(String? name) => PlaceCategory.values.firstWhere(
         (c) => c.name == name,
@@ -23,16 +19,12 @@ enum PlaceCategory {
 }
 
 enum AmenityType {
-  wifi('Wi-Fi'),
-  sockets('Розетки'),
-  pets('С животными'),
-  smoking('Курение'),
-  payment('Оплата'),
-  parking('Парковка');
-
-  const AmenityType(this.label);
-
-  final String label;
+  wifi,
+  sockets,
+  pets,
+  smoking,
+  payment,
+  parking;
 
   static AmenityType parse(String? name) => AmenityType.values.firstWhere(
         (a) => a.name == name,
@@ -103,9 +95,6 @@ class OpeningHours {
       DateTime(now.year, now.month, now.day, minuteOfDay ~/ 60, minuteOfDay % 60),
     );
   }
-
-  String get range =>
-      isAlwaysOpen ? 'Круглосуточно' : '${Fmt.hm(opensAt)}–${Fmt.hm(closesAt)}';
 
   Map<String, dynamic> toJson() => {'opensAt': opensAt, 'closesAt': closesAt};
 }

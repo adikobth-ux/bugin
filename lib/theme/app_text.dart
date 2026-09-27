@@ -5,7 +5,7 @@ import 'package:bugin/theme/app_colors.dart';
 /// Типографическая шкала: 32 / 28 / 24 / 20 / 18 / 17 / 16 / 15 / 14 / 13 / 12.
 /// Минимальный размер текста — 12.
 abstract final class AppText {
-  static const family = 'Manrope';
+  static const family = 'Onest';
 
   static const display = TextStyle(
     fontFamily: family,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/widgets/app_image.dart';
 import 'package:bugin/widgets/buttons.dart';
@@ -61,10 +62,10 @@ class _GalleryViewerState extends State<GalleryViewer> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 children: [
-                  const AppBackButton(
+                  AppBackButton(
                     style: CircleButtonStyle.overlay,
                     icon: Icons.close_rounded,
-                    semanticLabel: 'Закрыть',
+                    semanticLabel: context.l10n.close,
                   ),
                   const Spacer(),
                   Padding(

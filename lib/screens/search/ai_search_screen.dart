@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/navigation/app_routes.dart';
 import 'package:bugin/services/app_services.dart';
 import 'package:bugin/theme/app_colors.dart';
@@ -59,6 +60,8 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final s = l10n.search;
     final search = AppScope.of(context).search;
     final recent = search.recentQueries;
     final canSubmit = _controller.text.trim().isNotEmpty;
@@ -72,17 +75,17 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
-                const Row(
+                Row(
                   children: [
-                    AppBackButton(icon: Icons.close_rounded, semanticLabel: 'Закрыть'),
-                    SizedBox(width: 8),
-                    Text('Новый запрос', style: AppText.title),
+                    AppBackButton(icon: Icons.close_rounded, semanticLabel: l10n.close),
+                    const SizedBox(width: 8),
+                    Text(s.newQuery, style: AppText.title),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Semantics(
                   header: true,
-                  child: const Text('Что хочешь сделать?', style: AppText.h1),
+                  child: Text(s.title, style: AppText.h1),
                 ),
                 const SizedBox(height: 12),
                 AnimatedContainer(
@@ -114,7 +117,7 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
                         onSubmitted: (_) => _submit(),
                         style: AppText.title.copyWith(fontWeight: FontWeight.w500, height: 1.4),
                         decoration: InputDecoration.collapsed(
-                          hintText: 'Например: хочу вечером с девушкой, красиво и недорого',
+                          hintText: s.inputHint,
                           hintStyle: AppText.title.copyWith(
                             fontWeight: FontWeight.w500,
                             color: AppColors.inkMuted,
@@ -127,9 +130,9 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
                         children: [
                           const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
                           const SizedBox(width: 6),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Пиши как другу — я разберусь',
+                              s.writeLikeFriend,
                               style: AppText.caption,
                             ),
                           ),
@@ -138,7 +141,7 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
                             style: CircleButtonStyle.primary,
                             size: 48,
                             iconSize: 22,
-                            semanticLabel: 'Найти',
+                            semanticLabel: s.find,
                             onPressed: canSubmit ? _submit : null,
                           ),
                         ],
@@ -147,7 +150,7 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
                   ),
                 ),
                 const SizedBox(height: 28),
-                const Text('Попробуй так', style: AppText.title),
+                Text(s.tryThis, style: AppText.title),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -164,9 +167,9 @@ class _AiSearchScreenState extends State<AiSearchScreen> {
                   const SizedBox(height: 28),
                   Row(
                     children: [
-                      const Expanded(child: Text('Недавние', style: AppText.title)),
+                      Expanded(child: Text(s.recent, style: AppText.title)),
                       LinkButton(
-                        label: 'Очистить',
+                        label: s.clearHistory,
                         showChevron: false,
                         onTap: () => setState(search.clearHistory),
                       ),

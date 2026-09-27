@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/widgets/pressable.dart';
@@ -12,9 +13,10 @@ class SearchEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Pressable(
       onTap: onTap,
-      semanticLabel: 'Открыть поиск',
+      semanticLabel: l10n.openSearch,
       pressedScale: 0.98,
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -38,7 +40,7 @@ class SearchEntryCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'Напиши, чего хочешь…',
+                          l10n.searchHint,
                           style: AppText.titleSmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -47,8 +49,8 @@ class SearchEntryCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Например: «вечером с девушкой, красиво и не слишком дорого»',
+                  Text(
+                    l10n.searchExample,
                     style: AppText.caption,
                   ),
                 ],
@@ -82,7 +84,7 @@ class QueryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
-      semanticLabel: 'Изменить запрос: $query',
+      semanticLabel: context.l10n.editQuery(query),
       pressedScale: 0.98,
       child: Container(
         height: 44,

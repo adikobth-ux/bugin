@@ -1,25 +1,67 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:bugin/models/models.dart';
+import 'package:bugin/services/storage/key_value_store.dart';
 
 enum FavoriteKind { place, event, scenario }
 
 /// Избранное: места, события и сохранённые сценарии.
 ///
-/// Сейчас живёт в памяти. Для backend достаточно подключить сохранение
-/// в методах изменения — экраны слушают этот объект и ничего не заметят.
+/// Хранится на устройстве и переживает перезапуск. При первом запуске —
+/// значения по умолчанию. Для backend достаточно добавить синхронизацию
+/// в [_changed] — экраны слушают этот объект и ничего не заметят.
 class FavoritesStore extends ChangeNotifier {
   FavoritesStore({
+    KeyValueStore? storage,
     Iterable<String> placeIds = const [],
     Iterable<String> eventIds = const [],
     Iterable<Scenario> scenarios = const [],
-  })  : _placeIds = List.of(placeIds),
-        _eventIds = List.of(eventIds),
-        _scenarios = List.of(scenarios);
+  }) : _storage = storage {
+    final saved = storage?.readJson(StorageKeys.favorites);
+    if (saved != null) {
+      _placeIds.addAll(parseStringList(saved['places']));
+      _eventIds.addAll(parseStringList(saved['events']));
+      for (final raw in saved['scenarios'] as List? ?? const []) {
+        try {
+          _scenarios.add(Scenario.fromJson(raw as Map<String, dynamic>));
+        } catch (error) {
+          debugPrint('Пропущен повреждённый сценарий: $error');
+        }
+      }
+    } else {
+      _fill(placeIds, eventIds, scenarios);
+    }
+  }
 
-  final List<String> _placeIds;
-  final List<String> _eventIds;
-  final List<Scenario> _scenarios;
+  final KeyValueStore? _storage;
+  final List<String> _placeIds = [];
+  final List<String> _eventIds = [];
+  final List<Scenario> _scenarios = [];
+
+  void _fill(
+    Iterable<String> placeIds,
+    Iterable<String> eventIds,
+    Iterable<Scenario> scenarios,
+  ) {
+    _placeIds
+      ..clear()
+      ..addAll(placeIds);
+    _eventIds
+      ..clear()
+      ..addAll(eventIds);
+    _scenarios
+      ..clear()
+      ..addAll(scenarios);
+  }
+
+  void _changed() {
+    notifyListeners();
+    _storage?.writeJson(StorageKeys.favorites, {
+      'places': _placeIds,
+      'events': _eventIds,
+      'scenarios': _scenarios.map((s) => s.toJson()).toList(),
+    });
+  }
 
   List<String> get placeIds => List.unmodifiable(_placeIds);
   List<String> get eventIds => List.unmodifiable(_eventIds);
@@ -51,7 +93,7 @@ class FavoritesStore extends ChangeNotifier {
       ids.insert(0, id);
       active = true;
     }
-    notifyListeners();
+    _changed();
     return active;
   }
 
@@ -71,7 +113,7 @@ class FavoritesStore extends ChangeNotifier {
         case FavoriteKind.scenario:
           _scenarios.removeAt(index);
       }
-      notifyListeners();
+      _changed();
     }
     return index;
   }
@@ -83,7 +125,7 @@ class FavoritesStore extends ChangeNotifier {
       return;
     }
     ids.insert(index.clamp(0, ids.length).toInt(), id);
-    notifyListeners();
+    _changed();
   }
 
   bool hasScenario(String id) => _scenarios.any((s) => s.id == id);
@@ -96,7 +138,7 @@ class FavoritesStore extends ChangeNotifier {
     } else {
       _scenarios.insert(0, scenario);
     }
-    notifyListeners();
+    _changed();
   }
 
   void restoreScenario(Scenario scenario, int index) {
@@ -104,6 +146,33 @@ class FavoritesStore extends ChangeNotifier {
       return;
     }
     _scenarios.insert(index.clamp(0, _scenarios.length).toInt(), scenario);
-    notifyListeners();
+    _changed();
+  }
+
+  /// Заменяет сохранённые сценарии обновлёнными версиями с теми же id
+  /// (например, переведёнными на другой язык).
+  void updateScenarios(Iterable<Scenario> updated) {
+    final byId = {for (final s in updated) s.id: s};
+    var changed = false;
+    for (var i = 0; i < _scenarios.length; i++) {
+      final next = byId[_scenarios[i].id];
+      if (next != null) {
+        _scenarios[i] = next;
+        changed = true;
+      }
+    }
+    if (changed) {
+      _changed();
+    }
+  }
+
+  /// Возвращает избранное к начальному состоянию.
+  void reset({
+    Iterable<String> placeIds = const [],
+    Iterable<String> eventIds = const [],
+    Iterable<Scenario> scenarios = const [],
+  }) {
+    _fill(placeIds, eventIds, scenarios);
+    _changed();
   }
 }

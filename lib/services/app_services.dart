@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-import 'package:bugin/data/mock_events.dart';
-import 'package:bugin/data/mock_places.dart';
+import 'package:bugin/data/mock_catalog.dart';
 import 'package:bugin/data/mock_profile.dart';
+import 'package:bugin/l10n/app_language.dart';
 import 'package:bugin/navigation/app_state.dart';
 import 'package:bugin/services/evening_planner.dart';
 import 'package:bugin/services/events_repository.dart';
@@ -14,7 +14,9 @@ import 'package:bugin/services/mock/mock_profile_repository.dart';
 import 'package:bugin/services/mock/mock_search_service.dart';
 import 'package:bugin/services/places_repository.dart';
 import 'package:bugin/services/profile_store.dart';
+import 'package:bugin/services/search_history.dart';
 import 'package:bugin/services/search_service.dart';
+import 'package:bugin/services/storage/key_value_store.dart';
 
 /// Все зависимости приложения. Экраны знают только интерфейсы,
 /// поэтому mock-реализации заменяются на API в одном месте — здесь.
@@ -26,38 +28,69 @@ class AppServices {
     required this.planner,
     required this.favorites,
     required this.profile,
+    required this.history,
     required this.state,
-  });
+    VoidCallback? restoreDefaults,
+  }) : _restoreDefaults = restoreDefaults {
+    state.language.addListener(_translateSavedScenarios);
+  }
 
+  /// Прототип на mock data.
+  ///
+  /// [storage] — где хранить избранное, профиль, историю и настройки
+  /// (по умолчанию в памяти — для тестов). [deviceLanguage] — язык телефона,
+  /// он выбирается при первом запуске.
   factory AppServices.mock({
     Duration latency = const Duration(milliseconds: 450),
+    KeyValueStore? storage,
+    AppLanguage deviceLanguage = AppLanguage.ru,
+    DateTime? now,
   }) {
-    final now = DateTime.now();
-    final places = MockPlaces.build(now: now);
-    final events = MockEvents.build(now: now);
-    final planner = MockEveningPlanner(places, latency: latency);
+    final store = storage ?? MemoryKeyValueStore();
+    final state = AppState(storage: store, language: deviceLanguage);
+    AppLanguage language() => state.language.value;
+
+    final catalog = MockCatalog(now: now);
+    final planner = MockEveningPlanner(catalog, language, latency: latency);
+    final history = SearchHistory(
+      storage: store,
+      initial: MockProfile.recentQueries(language()),
+    );
+    final favorites = FavoritesStore(
+      storage: store,
+      placeIds: MockProfile.favoritePlaceIds,
+      eventIds: MockProfile.favoriteEventIds,
+      scenarios: planner.library,
+    );
+    final profile = ProfileStore(
+      MockProfile.profile(language()),
+      MockProfileRepository(MockProfile.profile(language()), latency: latency),
+      storage: store,
+    );
 
     return AppServices(
-      places: MockPlacesRepository(places, latency: latency),
-      events: MockEventsRepository(events, latency: latency),
+      places: MockPlacesRepository(catalog, language, latency: latency),
+      events: MockEventsRepository(catalog, language, latency: latency),
       search: MockSearchService(
-        places: places,
-        events: events,
+        catalog: catalog,
+        language: language,
+        history: history,
         latency: latency,
-        recent: MockProfile.recentQueries,
-        suggestions: MockProfile.suggestions,
       ),
       planner: planner,
-      favorites: FavoritesStore(
-        placeIds: MockProfile.favoritePlaceIds,
-        eventIds: MockProfile.favoriteEventIds,
-        scenarios: planner.library,
-      ),
-      profile: ProfileStore(
-        MockProfile.profile,
-        MockProfileRepository(MockProfile.profile, latency: latency),
-      ),
-      state: AppState(),
+      favorites: favorites,
+      profile: profile,
+      history: history,
+      state: state,
+      restoreDefaults: () {
+        favorites.reset(
+          placeIds: MockProfile.favoritePlaceIds,
+          eventIds: MockProfile.favoriteEventIds,
+          scenarios: planner.library,
+        );
+        profile.reset(MockProfile.profile(language()));
+        history.reset(MockProfile.recentQueries(language()));
+      },
     );
   }
 
@@ -67,7 +100,30 @@ class AppServices {
   final EveningPlanner planner;
   final FavoritesStore favorites;
   final ProfileStore profile;
+  final SearchHistory history;
   final AppState state;
+  final VoidCallback? _restoreDefaults;
+
+  /// Можно ли вернуть данные прототипа к начальным (есть только у mock).
+  bool get canResetData => _restoreDefaults != null;
+
+  /// Возвращает избранное, профиль и историю поиска к начальным.
+  /// Язык и город остаются как выбраны.
+  void resetData() => _restoreDefaults?.call();
+
+  /// Сохранённые сценарии содержат тексты — после смены языка переводим их.
+  Future<void> _translateSavedScenarios() async {
+    final saved = favorites.scenarios;
+    if (saved.isEmpty) {
+      return;
+    }
+    try {
+      final translated = await Future.wait(saved.map(planner.localize));
+      favorites.updateScenarios(translated);
+    } catch (error) {
+      debugPrint('Сценарии не переведены: $error');
+    }
+  }
 }
 
 /// Даёт экранам доступ к [AppServices] без глобальных синглтонов.

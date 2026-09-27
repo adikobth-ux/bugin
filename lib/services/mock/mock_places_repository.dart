@@ -1,13 +1,18 @@
+import 'package:bugin/data/mock_catalog.dart';
 import 'package:bugin/data/mock_places.dart';
+import 'package:bugin/l10n/app_language.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/mock/simulated_network.dart';
 import 'package:bugin/services/places_repository.dart';
 
 class MockPlacesRepository implements PlacesRepository {
-  MockPlacesRepository(this._places, {required this.latency});
+  MockPlacesRepository(this._catalog, this._language, {required this.latency});
 
-  final List<Place> _places;
+  final MockCatalog _catalog;
+  final CurrentLanguage _language;
   final Duration latency;
+
+  List<Place> get _places => _catalog.places(_language());
 
   Place? _find(String id) {
     for (final place in _places) {

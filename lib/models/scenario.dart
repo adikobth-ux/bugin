@@ -1,22 +1,45 @@
+import 'package:bugin/models/common.dart';
 import 'package:bugin/models/evening_request.dart';
 
 /// Роль точки в плане — по ней подбираются альтернативы.
-enum StopRole { coffee, walk, dinner, activity, culture, novelty, work }
+enum StopRole {
+  coffee,
+  walk,
+  dinner,
+  activity,
+  culture,
+  novelty,
+  work;
 
+  static StopRole parse(String? name) => StopRole.values.firstWhere(
+        (r) => r.name == name,
+        orElse: () => StopRole.activity,
+      );
+}
+
+/// Подписи — в `AppStrings.label`.
 enum TravelMode {
-  walk('Пешком'),
-  taxi('На такси');
+  walk,
+  taxi;
 
-  const TravelMode(this.label);
-
-  final String label;
+  static TravelMode parse(String? name) => TravelMode.values.firstWhere(
+        (m) => m.name == name,
+        orElse: () => TravelMode.taxi,
+      );
 }
 
 class TravelLeg {
   const TravelLeg(this.mode, this.minutes);
 
+  factory TravelLeg.fromJson(Map<String, dynamic> json) => TravelLeg(
+        TravelMode.parse(json['mode'] as String?),
+        json['minutes'] as int? ?? 10,
+      );
+
   final TravelMode mode;
   final int minutes;
+
+  Map<String, dynamic> toJson() => {'mode': mode.name, 'minutes': minutes};
 }
 
 /// Точка плана: место + время.
@@ -24,6 +47,7 @@ class PlanStop {
   const PlanStop({
     required this.role,
     required this.placeId,
+    required this.kind,
     required this.title,
     required this.kindLabel,
     required this.startMinutes,
@@ -34,11 +58,29 @@ class PlanStop {
     this.image = '',
   });
 
+  factory PlanStop.fromJson(Map<String, dynamic> json) => PlanStop(
+        role: StopRole.parse(json['role'] as String?),
+        placeId: json['placeId'] as String,
+        kind: json['kind'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        kindLabel: json['kindLabel'] as String? ?? '',
+        startMinutes: json['startMinutes'] as int? ?? 0,
+        durationMinutes: json['durationMinutes'] as int? ?? 60,
+        cost: json['cost'] as int? ?? 0,
+        routeLabel: json['routeLabel'] as String?,
+        rating: (json['rating'] as num?)?.toDouble(),
+        image: json['image'] as String? ?? '',
+      );
+
   final StopRole role;
   final String placeId;
+
+  /// Код занятия: `dinner`, `walk`, `bowling`… По нему план переводится
+  /// на другой язык и подбираются замены.
+  final String kind;
   final String title;
 
-  /// «Кофе и десерт», «Ужин», «Прогулка».
+  /// «Кофе и десерт», «Ужин», «Прогулка» — на языке, на котором план собран.
   final String kindLabel;
   final int startMinutes;
   final int durationMinutes;
@@ -55,9 +97,24 @@ class PlanStop {
 
   String get shortTitle => routeLabel ?? title;
 
+  Map<String, dynamic> toJson() => {
+        'role': role.name,
+        'placeId': placeId,
+        'kind': kind,
+        'title': title,
+        'kindLabel': kindLabel,
+        'startMinutes': startMinutes,
+        'durationMinutes': durationMinutes,
+        'cost': cost,
+        'routeLabel': routeLabel,
+        'rating': rating,
+        'image': image,
+      };
+
   PlanStop copyWith({int? startMinutes}) => PlanStop(
         role: role,
         placeId: placeId,
+        kind: kind,
         title: title,
         kindLabel: kindLabel,
         startMinutes: startMinutes ?? this.startMinutes,
@@ -81,6 +138,26 @@ class Scenario {
     this.tags = const [],
     this.request,
   });
+
+  factory Scenario.fromJson(Map<String, dynamic> json) {
+    final request = json['request'];
+    return Scenario(
+      id: json['id'] as String,
+      title: json['title'] as String? ?? '',
+      subtitle: json['subtitle'] as String?,
+      image: json['image'] as String?,
+      stops: (json['stops'] as List? ?? const [])
+          .map((e) => PlanStop.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      legs: (json['legs'] as List? ?? const [])
+          .map((e) => TravelLeg.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      tags: parseStringList(json['tags']),
+      request: request is Map<String, dynamic>
+          ? EveningRequest.fromJson(request)
+          : null,
+    );
+  }
 
   final String id;
   final String title;
@@ -127,9 +204,22 @@ class Scenario {
     return totalCost <= budget;
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'subtitle': subtitle,
+        'image': image,
+        'stops': stops.map((s) => s.toJson()).toList(),
+        'legs': legs.map((l) => l.toJson()).toList(),
+        'tags': tags,
+        'request': request?.toJson(),
+      };
+
   Scenario copyWith({
     String? id,
     String? title,
+    String? subtitle,
+    List<String>? tags,
     List<PlanStop>? stops,
     List<TravelLeg>? legs,
   }) =>
@@ -138,9 +228,9 @@ class Scenario {
         title: title ?? this.title,
         stops: stops ?? this.stops,
         legs: legs ?? this.legs,
-        subtitle: subtitle,
+        subtitle: subtitle ?? this.subtitle,
         image: image,
-        tags: tags,
+        tags: tags ?? this.tags,
         request: request,
       );
 }

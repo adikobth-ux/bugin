@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/widgets/buttons.dart';
 
@@ -8,7 +9,7 @@ class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
     required this.title,
-    this.actionLabel = 'Все',
+    this.actionLabel,
     this.onAction,
     this.trailing,
     this.padding = const EdgeInsets.fromLTRB(16, 28, 12, 8),
@@ -16,7 +17,8 @@ class SectionHeader extends StatelessWidget {
   });
 
   final String title;
-  final String actionLabel;
+  /// Подпись ссылки; по умолчанию «Все».
+  final String? actionLabel;
   final VoidCallback? onAction;
   final Widget? trailing;
   final EdgeInsets padding;
@@ -26,7 +28,7 @@ class SectionHeader extends StatelessWidget {
   const SectionHeader.inset({
     super.key,
     required this.title,
-    this.actionLabel = 'Все',
+    this.actionLabel,
     this.onAction,
     this.trailing,
     this.style = AppText.h3,
@@ -46,7 +48,8 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
           if (trailing != null) trailing!,
-          if (action != null) LinkButton(label: actionLabel, onTap: action),
+          if (action != null)
+            LinkButton(label: actionLabel ?? context.l10n.all, onTap: action),
         ],
       ),
     );

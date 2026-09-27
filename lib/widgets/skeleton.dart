@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_colors.dart';
 
 /// Мягкая пульсация для скелетонов загрузки.
@@ -31,7 +32,7 @@ class _SkeletonPulseState extends State<SkeletonPulse>
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Загрузка',
+      label: context.l10n.loading,
       child: FadeTransition(opacity: _opacity, child: widget.child),
     );
   }

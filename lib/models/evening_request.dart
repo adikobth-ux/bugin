@@ -1,39 +1,40 @@
-import 'package:bugin/core/formatters.dart';
+// Подписи компаний, дней и настроений, итоговая строка параметров
+// и название плана — в `AppStrings` (label, requestSummary, planTitle).
 
 enum Company {
-  solo('Один', 'для себя'),
-  pair('Вдвоём', 'вдвоём'),
-  friends('С друзьями', 'с друзьями'),
-  family('С семьёй', 'с семьёй');
+  solo,
+  pair,
+  friends,
+  family;
 
-  const Company(this.label, this.titleSuffix);
-
-  final String label;
-  final String titleSuffix;
+  static Company? tryParse(String? name) => _byName(Company.values, name);
 }
 
 enum PlanDay {
-  today('Сегодня', 'сегодня'),
-  tomorrow('Завтра', 'завтра'),
-  weekend('Выходные', 'в выходные'),
-  date('Выбрать дату', 'в выбранный день');
+  today,
+  tomorrow,
+  weekend,
+  date;
 
-  const PlanDay(this.label, this.inline);
-
-  final String label;
-  final String inline;
+  static PlanDay? tryParse(String? name) => _byName(PlanDay.values, name);
 }
 
 enum Mood {
-  calm('Спокойно', 'Спокойный'),
-  active('Активно', 'Активный'),
-  novelty('Что-то новое', 'Необычный'),
-  culture('Культурно', 'Культурный');
+  calm,
+  active,
+  novelty,
+  culture;
 
-  const Mood(this.label, this.adjective);
+  static Mood? tryParse(String? name) => _byName(Mood.values, name);
+}
 
-  final String label;
-  final String adjective;
+T? _byName<T extends Enum>(List<T> values, String? name) {
+  for (final value in values) {
+    if (value.name == name) {
+      return value;
+    }
+  }
+  return null;
 }
 
 /// Параметры «Собрать мне вечер».
@@ -47,6 +48,16 @@ class EveningRequest {
     this.mood = Mood.calm,
     this.wishes = '',
   });
+
+  factory EveningRequest.fromJson(Map<String, dynamic> json) => EveningRequest(
+        company: Company.tryParse(json['company'] as String?) ?? Company.pair,
+        day: PlanDay.tryParse(json['day'] as String?) ?? PlanDay.today,
+        date: DateTime.tryParse(json['date'] as String? ?? ''),
+        startMinutes: json['startMinutes'] as int? ?? 19 * 60,
+        budget: json['budget'] as int?,
+        mood: Mood.tryParse(json['mood'] as String?) ?? Mood.calm,
+        wishes: json['wishes'] as String? ?? '',
+      );
 
   final Company company;
   final PlanDay day;
@@ -63,22 +74,15 @@ class EveningRequest {
   static const startOptions = [18 * 60, 19 * 60, 20 * 60, 21 * 60];
   static const budgetOptions = <int?>[5000, 10000, 15000, null];
 
-  static String budgetLabel(int? value) =>
-      value == null ? 'Неважно' : Fmt.upToTenge(value);
-
-  String get dayText {
-    if (day == PlanDay.date && date != null) {
-      return Fmt.relativeDay(date!).toLowerCase();
-    }
-    return day.inline;
-  }
-
-  /// «Вдвоём · сегодня с 19:00 · до 15 000 ₸ · спокойно».
-  String get summary {
-    final budgetText = budget == null ? 'бюджет не важен' : Fmt.upToTenge(budget!);
-    return '${company.label} · $dayText с ${Fmt.hm(startMinutes)} · '
-        '$budgetText · ${mood.label.toLowerCase()}';
-  }
+  Map<String, dynamic> toJson() => {
+        'company': company.name,
+        'day': day.name,
+        'date': date?.toIso8601String(),
+        'startMinutes': startMinutes,
+        'budget': budget,
+        'mood': mood.name,
+        'wishes': wishes,
+      };
 
   EveningRequest copyWith({
     Company? company,

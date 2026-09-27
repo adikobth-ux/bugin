@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/theme/app_colors.dart';
@@ -55,7 +56,7 @@ class PlaceCard extends StatelessWidget {
                   Positioned(
                     left: 10,
                     top: 10,
-                    child: OverlayLabel(place.category.label),
+                    child: OverlayLabel(context.l10n.label(place.category)),
                   ),
                   Positioned(
                     right: 4,
@@ -82,7 +83,7 @@ class PlaceCard extends StatelessWidget {
                     rating: place.rating,
                     parts: [
                       Fmt.distance(place.distanceKm),
-                      Fmt.averageCheck(place.averageCheck),
+                      context.l10n.averageCheck(place.averageCheck),
                     ],
                   ),
                 ],

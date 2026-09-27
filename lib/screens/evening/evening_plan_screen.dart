@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_routes.dart';
@@ -78,13 +79,13 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
     }
   }
 
-  String _altSubtitle(PlanStop stop) {
+  String _altSubtitle(AppStrings l10n, PlanStop stop) {
     final parts = <String>[stop.kindLabel];
     final rating = stop.rating;
     if (rating != null) {
       parts.add('★ ${Fmt.rating(rating)}');
     }
-    parts.add(Fmt.averageCheck(stop.cost));
+    parts.add(l10n.averageCheck(stop.cost));
     return parts.join(' · ');
   }
 
@@ -93,6 +94,8 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
     if (scenario == null) {
       return;
     }
+    final l10n = context.l10n;
+    final s = l10n.evening;
     final planner = AppScope.of(context).planner;
     final alternatives = await planner.alternatives(scenario, index);
     if (!mounted) {
@@ -101,13 +104,13 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
     final current = scenario.stops[index];
     final picked = await showAppSheet<PlanStop>(
       context,
-      title: 'Чем заменить «${current.title}»?',
-      subtitle: scenario.request?.budget != null ? 'Только варианты в рамках бюджета' : null,
+      title: s.replaceTitle(current.title),
+      subtitle: scenario.request?.budget != null ? s.onlyWithinBudget : null,
       builder: (sheetContext) => alternatives.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.only(bottom: 8),
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                'Других вариантов в рамках бюджета нет — попробуй увеличить бюджет',
+                s.noAlternatives,
                 style: AppText.caption,
               ),
             )
@@ -116,7 +119,7 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
                 for (final alt in alternatives)
                   SheetOption(
                     label: alt.title,
-                    subtitle: _altSubtitle(alt),
+                    subtitle: _altSubtitle(l10n, alt),
                     selected: false,
                     onTap: () => Navigator.of(sheetContext).pop(alt),
                   ),
@@ -134,7 +137,7 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
       }
       HapticFeedback.selectionClick();
       setState(() => _scenario = next);
-      showAppSnack(context, 'Заменил на «${picked.title}»');
+      showAppSnack(context, s.replaced(picked.title));
     } finally {
       if (mounted) {
         setState(() => _replacing = false);
@@ -147,14 +150,15 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
     if (scenario == null) {
       return;
     }
+    final s = context.l10n.evening;
     final services = AppScope.of(context);
     final navigator = Navigator.of(context);
     services.favorites.saveScenario(scenario);
     HapticFeedback.mediumImpact();
     showAppSnack(
       context,
-      'Сценарий сохранён в избранное',
-      actionLabel: 'Открыть',
+      s.savedToFavorites,
+      actionLabel: s.open,
       onAction: () {
         services.state.favoritesSection.value = FavoritesSection.scenarios;
         services.state.tab.value = AppTab.favorites;
@@ -178,6 +182,8 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
   Widget build(BuildContext context) {
     final scenario = _scenario;
     final favorites = AppScope.of(context).favorites;
+    final l10n = context.l10n;
+    final strings = l10n.evening;
 
     return AnnotatedRegion(
       value: AppTheme.overlayOnLight,
@@ -198,7 +204,7 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
                       children: [
                         Expanded(
                           child: PrimaryButton(
-                            label: upToDate ? 'Сохранено' : (saved ? 'Обновить' : 'Сохранить'),
+                            label: upToDate ? strings.saved : (saved ? strings.update : l10n.save),
                             icon: upToDate
                                 ? Icons.bookmark_rounded
                                 : Icons.bookmark_border_rounded,
@@ -209,11 +215,11 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: PrimaryButton(
-                            label: 'Маршрут',
+                            label: l10n.route,
                             icon: Icons.near_me_outlined,
                             onPressed: () => showDemoSnack(
                               context,
-                              'маршрут по всем точкам откроется в картах',
+                              strings.routeDemo,
                             ),
                           ),
                         ),
@@ -234,12 +240,12 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _fromForm ? 'Твой вечер' : 'Сценарий',
+                        _fromForm ? strings.yourEvening : l10n.scenario,
                         style: AppText.title,
                       ),
                     ),
                     LinkButton(
-                      label: 'Изменить',
+                      label: strings.edit,
                       icon: Icons.edit_outlined,
                       onTap: _edit,
                     ),
@@ -260,14 +266,15 @@ class _EveningPlanScreenState extends State<EveningPlanScreen> {
   }
 
   List<Widget> _content(Scenario scenario) {
+    final l10n = context.l10n;
     final request = scenario.request;
     final chips = request == null
         ? scenario.tags
         : [
-            request.company.label,
-            '${_capitalize(request.dayText)} с ${Fmt.hm(request.startMinutes)}',
-            request.budget == null ? 'Бюджет не важен' : Fmt.upToTenge(request.budget!),
-            request.mood.label,
+            l10n.label(request.company),
+            '${_capitalize(l10n.requestDay(request))} ${l10n.fromTime(request.startMinutes)}',
+            request.budget == null ? l10n.evening.budgetAny : l10n.upToTenge(request.budget!),
+            l10n.label(request.mood),
           ];
 
     return [
@@ -305,6 +312,7 @@ class _PlanLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n.evening;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -323,10 +331,10 @@ class _PlanLoading extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        const Text('Собираю план…', textAlign: TextAlign.center, style: AppText.h3),
+        Text(s.building, textAlign: TextAlign.center, style: AppText.h3),
         const SizedBox(height: 4),
-        const Text(
-          'Подбираю места под бюджет и время',
+        Text(
+          s.buildingHint,
           textAlign: TextAlign.center,
           style: AppText.caption,
         ),
@@ -344,6 +352,7 @@ class _TotalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n.evening;
     final fits = scenario.fitsBudget;
     final count = scenario.stops.length;
     return Container(
@@ -367,7 +376,7 @@ class _TotalCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${Fmt.approxTenge(scenario.totalCost)} на человека',
+                  s.perPerson(Fmt.approxTenge(scenario.totalCost)),
                   style: AppText.title.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 2),
@@ -376,12 +385,12 @@ class _TotalCard extends StatelessWidget {
                     style: AppText.caption,
                     children: [
                       TextSpan(
-                        text: '$count ${Fmt.plural(count, 'точка', 'точки', 'точек')} · '
+                        text: '${s.stopsCount(count)} · '
                             '${Fmt.hm(scenario.startMinutes)}–${Fmt.hm(scenario.endMinutes)}',
                       ),
                       if (fits != null)
                         TextSpan(
-                          text: fits ? ' · в рамках бюджета' : ' · дороже бюджета',
+                          text: ' · ${fits ? s.withinBudget : s.overBudget}',
                           style: TextStyle(
                             color: fits ? AppColors.success : AppColors.danger,
                             fontWeight: FontWeight.w700,
@@ -445,6 +454,7 @@ class _StopRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isWalk = stop.role == StopRole.walk;
     return IntrinsicHeight(
       child: Row(
@@ -520,14 +530,14 @@ class _StopRow extends StatelessWidget {
                           MetaLine(
                             rating: stop.rating,
                             parts: [
-                              if (stop.rating == null) Fmt.duration(stop.durationMinutes),
-                              Fmt.averageCheck(stop.cost),
+                              if (stop.rating == null) l10n.duration(stop.durationMinutes),
+                              l10n.averageCheck(stop.cost),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Pressable(
                             onTap: onReplace,
-                            semanticLabel: 'Заменить: ${stop.title}',
+                            semanticLabel: l10n.evening.replaceLabel(stop.title),
                             child: Container(
                               height: 36,
                               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -546,7 +556,7 @@ class _StopRow extends StatelessWidget {
                                   const SizedBox(width: 5),
                                   ExcludeSemantics(
                                     child: Text(
-                                      'Заменить',
+                                      l10n.evening.replace,
                                       style: AppText.captionStrong.copyWith(
                                         color: AppColors.primaryInk,
                                       ),
@@ -577,6 +587,7 @@ class _LegRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SizedBox(
       height: 40,
       child: Row(
@@ -590,7 +601,10 @@ class _LegRow extends StatelessWidget {
           const SizedBox(width: 10),
           Icon(Visuals.travelIcon(leg.mode), size: 16, color: AppColors.inkSecondary),
           const SizedBox(width: 6),
-          Text('${leg.mode.label} ${leg.minutes} мин', style: AppText.micro),
+          Text(
+            '${l10n.label(leg.mode)} ${l10n.durationShort(leg.minutes)}',
+            style: AppText.micro,
+          ),
         ],
       ),
     );

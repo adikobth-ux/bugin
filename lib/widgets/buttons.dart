@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_spacing.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -148,19 +149,21 @@ class AppBackButton extends StatelessWidget {
     super.key,
     this.style = CircleButtonStyle.surface,
     this.icon = Icons.arrow_back_rounded,
-    this.semanticLabel = 'Назад',
+    this.semanticLabel,
   });
 
   final CircleButtonStyle style;
   final IconData icon;
-  final String semanticLabel;
+
+  /// По умолчанию — «Назад».
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     return CircleIconButton(
       icon: icon,
       style: style,
-      semanticLabel: semanticLabel,
+      semanticLabel: semanticLabel ?? context.l10n.back,
       onPressed: () => Navigator.of(context).maybePop(),
     );
   }

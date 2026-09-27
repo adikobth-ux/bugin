@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
@@ -69,26 +70,28 @@ class _EventScreenState extends State<EventScreen> {
     );
   }
 
-  String _dateTitle(Event event) {
+  String _dateTitle(AppStrings l10n, Event event) {
     if (event.isLongRunning) {
-      return '${Fmt.relativeDay(event.startsAt)}, '
+      return '${l10n.relativeDay(event.startsAt)}, '
           '${Fmt.time(event.startsAt)}–${Fmt.time(event.endsAt)}';
     }
-    return '${Fmt.longDate(event.startsAt)} · ${Fmt.time(event.startsAt)}';
+    return '${l10n.longDate(event.startsAt)} · ${Fmt.time(event.startsAt)}';
   }
 
-  String _dateSubtitle(Event event) {
+  String _dateSubtitle(AppStrings l10n, Event event) {
     if (event.isLongRunning) {
-      return 'Можно прийти в любое время';
+      return l10n.event.anyTime;
     }
-    return '${Fmt.inDays(event.startsAt)} · около ${Fmt.duration(event.durationMinutes)}';
+    return '${l10n.inDays(event.startsAt)} · '
+        '${l10n.event.approxDuration(l10n.duration(event.durationMinutes))}';
   }
 
   Future<void> _openTickets(Event event) async {
+    final l10n = context.l10n;
     final selected = await showAppSheet<TicketCategory>(
       context,
-      title: 'Билеты',
-      subtitle: '${event.title} · ${Fmt.eventWhen(event.startsAt)}',
+      title: l10n.event.tickets,
+      subtitle: '${event.title} · ${l10n.eventWhen(event.startsAt)}',
       builder: (sheetContext) => _TicketSheet(
         tickets: event.tickets,
         onBuy: (ticket) => Navigator.of(sheetContext).pop(ticket),
@@ -96,26 +99,30 @@ class _EventScreenState extends State<EventScreen> {
     );
     if (selected != null && mounted) {
       HapticFeedback.mediumImpact();
-      showAppSnack(
-        context,
-        '${selected.name} — оплата подключится вместе с backend. Это демо',
-      );
+      showAppSnack(context, l10n.event.paymentDemo(selected.name));
     }
   }
 
   void _share(Event event) {
+    final l10n = context.l10n;
     Clipboard.setData(
       ClipboardData(
-        text: '${event.title}, ${Fmt.eventWhen(event.startsAt)}, ${event.venueName} — нашёл в Bugin',
+        text: l10n.event.shareText(
+          event.title,
+          l10n.eventWhen(event.startsAt),
+          event.venueName,
+        ),
       ),
     );
-    showAppSnack(context, 'Скопировано — можно отправить друзьям');
+    showAppSnack(context, l10n.event.copied);
   }
 
   Widget _buildEvent(Event event) {
+    final l10n = context.l10n;
+    final strings = l10n.event;
     return DetailScaffold(
       image: event.image,
-      badge: event.category.label,
+      badge: l10n.label(event.category),
       title: event.title,
       subtitle: event.subtitle,
       heroHeight: 340,
@@ -125,7 +132,7 @@ class _EventScreenState extends State<EventScreen> {
         CircleIconButton(
           icon: Icons.ios_share_rounded,
           style: onImage ? CircleButtonStyle.overlay : CircleButtonStyle.surface,
-          semanticLabel: 'Поделиться',
+          semanticLabel: strings.share,
           onPressed: () => _share(event),
         ),
         FavoriteButton(
@@ -143,16 +150,16 @@ class _EventScreenState extends State<EventScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  Fmt.fromTenge(event.priceFrom),
+                  strings.priceFrom(event.priceFrom),
                   style: AppText.h2.copyWith(letterSpacing: 0),
                 ),
-                const Text('за билет', style: AppText.micro),
+                Text(strings.perTicket, style: AppText.micro),
               ],
             ),
             const SizedBox(width: 16),
             Expanded(
               child: PrimaryButton(
-                label: 'Купить билет',
+                label: strings.buyTicket,
                 icon: Icons.confirmation_number_outlined,
                 onPressed: () => _openTickets(event),
               ),
@@ -165,16 +172,15 @@ class _EventScreenState extends State<EventScreen> {
           children: [
             InfoRow.text(
               icon: Icons.calendar_today_outlined,
-              title: _dateTitle(event),
-              subtitle: _dateSubtitle(event),
+              title: _dateTitle(l10n, event),
+              subtitle: _dateSubtitle(l10n, event),
               trailing: CircleIconButton(
                 icon: Icons.event_available_outlined,
                 style: CircleButtonStyle.soft,
                 size: 40,
                 iconSize: 18,
-                semanticLabel: 'Добавить в календарь',
-                onPressed: () =>
-                    showDemoSnack(context, 'событие добавится в календарь телефона'),
+                semanticLabel: strings.addToCalendar,
+                onPressed: () => showDemoSnack(context, strings.calendarDemo),
               ),
             ),
             Padding(
@@ -206,7 +212,7 @@ class _EventScreenState extends State<EventScreen> {
                     variant: event.id.length + 1,
                     onRoute: () => showDemoSnack(
                       context,
-                      'маршрут до «${event.venueName}» откроется в картах',
+                      strings.routeDemo(event.venueName),
                     ),
                   ),
                 ],
@@ -216,11 +222,10 @@ class _EventScreenState extends State<EventScreen> {
               icon: Icons.confirmation_number_outlined,
               title: event.tickets.length == 1
                   ? event.tickets.first.name
-                  : '${event.tickets.length} '
-                      '${Fmt.plural(event.tickets.length, 'категория', 'категории', 'категорий')} билетов',
+                  : strings.ticketCategories(event.tickets.length),
               subtitle: [
                 if (event.tickets.length > 1) event.tickets.map((t) => t.name).join(', '),
-                event.ageLimit > 0 ? '${event.ageLimit}+' : 'Без ограничений по возрасту',
+                event.ageLimit > 0 ? '${event.ageLimit}+' : strings.noAgeLimit,
               ].join(' · '),
               trailing: const Icon(
                 Icons.chevron_right_rounded,
@@ -240,9 +245,9 @@ class _EventScreenState extends State<EventScreen> {
         ],
         if (event.reasons.isNotEmpty) ...[
           const SizedBox(height: 16),
-          ReasonsCard(title: 'Почему тебе понравится', reasons: event.reasons),
+          ReasonsCard(title: strings.reasonsTitle, reasons: event.reasons),
         ],
-        const SectionHeader.inset(title: 'О событии'),
+        SectionHeader.inset(title: strings.about),
         ExpandableText(event.description),
         FutureBuilder<List<Event>>(
           future: _similar,
@@ -255,7 +260,8 @@ class _EventScreenState extends State<EventScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SectionHeader.inset(
-                  title: 'Похожие события',
+                  title: strings.similar,
+                  actionLabel: l10n.all,
                   onAction: () => AppNavigator.goToTab(context, AppTab.afisha),
                 ),
                 if (similar == null)
@@ -296,8 +302,9 @@ class _TicketSheetState extends State<_TicketSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n.event;
     if (widget.tickets.isEmpty) {
-      return const Text('Билеты скоро появятся', style: AppText.caption);
+      return Text(strings.ticketsSoon, style: AppText.caption);
     }
     final ticket = widget.tickets[_selected];
     return Column(
@@ -315,7 +322,7 @@ class _TicketSheetState extends State<_TicketSheet> {
           children: [
             Expanded(
               child: Text(
-                '$_count ${Fmt.plural(_count, 'билет', 'билета', 'билетов')}',
+                strings.ticketCount(_count),
                 style: AppText.bodyStrong,
               ),
             ),
@@ -323,26 +330,26 @@ class _TicketSheetState extends State<_TicketSheet> {
               icon: Icons.remove_rounded,
               style: CircleButtonStyle.soft,
               size: 36,
-              semanticLabel: 'Меньше',
+              semanticLabel: strings.less,
               onPressed: _count > 1 ? () => setState(() => _count--) : null,
             ),
             CircleIconButton(
               icon: Icons.add_rounded,
               style: CircleButtonStyle.soft,
               size: 36,
-              semanticLabel: 'Больше',
+              semanticLabel: strings.more,
               onPressed: _count < 6 ? () => setState(() => _count++) : null,
             ),
           ],
         ),
         const SizedBox(height: 12),
         PrimaryButton(
-          label: 'Оплатить ${Fmt.tenge(ticket.price * _count)}',
+          label: strings.pay(ticket.price * _count),
           onPressed: () => widget.onBuy(ticket),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Это прототип: оплата не проводится.',
+        Text(
+          strings.prototypeNote,
           textAlign: TextAlign.center,
           style: AppText.caption,
         ),

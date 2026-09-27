@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/theme/app_colors.dart';
@@ -47,30 +48,33 @@ class EventCard extends StatelessWidget {
   final double? width;
   final _EventCardVariant _variant;
 
-  String get _when {
+  String _when(AppStrings l10n) {
     if (event.isLongRunning) {
-      final prefix = showDay ? '${Fmt.relativeDay(event.startsAt)}, до' : 'До';
-      return '$prefix ${Fmt.time(event.endsAt)}';
+      return l10n.openUntil(
+        event.endsAt,
+        day: showDay ? l10n.relativeDay(event.startsAt) : null,
+      );
     }
-    return showDay ? Fmt.eventWhen(event.startsAt) : Fmt.time(event.startsAt);
+    return showDay ? l10n.eventWhen(event.startsAt) : Fmt.time(event.startsAt);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return switch (_variant) {
-      _EventCardVariant.row => _buildRow(),
-      _EventCardVariant.featured => _buildFeatured(),
-      _EventCardVariant.compact => _buildCompact(),
+      _EventCardVariant.row => _buildRow(l10n),
+      _EventCardVariant.featured => _buildFeatured(l10n),
+      _EventCardVariant.compact => _buildCompact(l10n),
     };
   }
 
-  Widget _buildRow() {
+  Widget _buildRow(AppStrings l10n) {
     return MediaRowCard(
       image: event.image,
       imageSize: 76,
       placeholderIcon: Visuals.eventIcon(event.category),
       placeholderTone: Visuals.eventTone(event.category),
-      overline: '$_when · ${event.category.label}',
+      overline: '${_when(l10n)} · ${l10n.label(event.category)}',
       title: event.title,
       lines: [
         Text(
@@ -79,7 +83,7 @@ class EventCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: AppText.caption,
         ),
-        Text(Fmt.fromTenge(event.priceFrom), style: AppText.captionStrong),
+        Text(l10n.fromTenge(event.priceFrom), style: AppText.captionStrong),
       ],
       trailing: FavoriteButton(
         kind: FavoriteKind.event,
@@ -90,7 +94,7 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatured() {
+  Widget _buildFeatured(AppStrings l10n) {
     return Pressable(
       onTap: onTap,
       pressedScale: 0.98,
@@ -133,7 +137,7 @@ class EventCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          BrandBadge(event.category.label),
+                          BrandBadge(l10n.label(event.category)),
                           const SizedBox(height: 6),
                           Text(
                             event.title,
@@ -143,7 +147,7 @@ class EventCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$_when · ${event.venueName}',
+                            '${_when(l10n)} · ${event.venueName}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppText.caption.copyWith(
@@ -155,7 +159,7 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    PriceBadge(Fmt.fromTenge(event.priceFrom)),
+                    PriceBadge(l10n.fromTenge(event.priceFrom)),
                   ],
                 ),
               ),
@@ -166,7 +170,7 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCompact() {
+  Widget _buildCompact(AppStrings l10n) {
     return Pressable(
       onTap: onTap,
       child: Container(
@@ -200,9 +204,9 @@ class EventCard extends StatelessWidget {
                     style: AppText.label.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
-                  Text(_when, style: AppText.micro),
+                  Text(_when(l10n), style: AppText.micro),
                   const SizedBox(height: 3),
-                  Text(Fmt.fromTenge(event.priceFrom), style: AppText.captionStrong),
+                  Text(l10n.fromTenge(event.priceFrom), style: AppText.captionStrong),
                 ],
               ),
             ),
@@ -225,7 +229,7 @@ class EventMeta extends StatelessWidget {
       parts: [
         event.venueName,
         Fmt.distance(event.distanceKm),
-        Fmt.fromTenge(event.priceFrom),
+        context.l10n.fromTenge(event.priceFrom),
       ],
     );
   }

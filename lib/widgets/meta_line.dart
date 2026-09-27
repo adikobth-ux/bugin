@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
 
@@ -58,7 +59,7 @@ class MetaLine extends StatelessWidget {
         );
       final count = reviewsCount;
       if (count != null) {
-        spans.add(TextSpan(text: ' (${Fmt.compactCount(count)})'));
+        spans.add(TextSpan(text: ' (${context.l10n.compactCount(count)})'));
       }
     }
     for (final part in parts) {

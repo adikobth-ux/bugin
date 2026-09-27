@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/widgets/buttons.dart';
 
@@ -48,7 +49,7 @@ class _ExpandableTextState extends State<ExpandableText> {
             ),
             if (overflows)
               LinkButton(
-                label: _expanded ? 'Свернуть' : 'Читать дальше',
+                label: _expanded ? context.l10n.collapse : context.l10n.readMore,
                 showChevron: false,
                 onTap: () => setState(() => _expanded = !_expanded),
               ),

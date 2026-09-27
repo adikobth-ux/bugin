@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_routes.dart';
@@ -21,26 +22,33 @@ import 'package:bugin/widgets/skeleton.dart';
 import 'package:bugin/widgets/state_views.dart';
 
 enum _KindFilter {
-  all('Все'),
-  restaurants('Рестораны'),
-  cafes('Кафе'),
-  fun('Развлечения'),
-  events('События');
+  all,
+  restaurants,
+  cafes,
+  fun,
+  events;
 
-  const _KindFilter(this.label);
-
-  final String label;
+  String title(AppStrings l10n) => switch (this) {
+        _KindFilter.all => l10n.all,
+        _KindFilter.restaurants => l10n.search.filterRestaurants,
+        _KindFilter.cafes => l10n.search.filterCafes,
+        _KindFilter.fun => l10n.search.filterFun,
+        _KindFilter.events => l10n.search.filterEvents,
+      };
 }
 
 enum _Sort {
-  best('Лучшее совпадение'),
-  near('Сначала ближе'),
-  cheap('Сначала дешевле'),
-  rating('По рейтингу');
+  best,
+  near,
+  cheap,
+  rating;
 
-  const _Sort(this.label);
-
-  final String label;
+  String title(AppStrings l10n) => switch (this) {
+        _Sort.best => l10n.search.sortBest,
+        _Sort.near => l10n.search.sortNear,
+        _Sort.cheap => l10n.search.sortCheap,
+        _Sort.rating => l10n.search.sortRating,
+      };
 }
 
 /// Выдача AI-поиска: что понял Bugin + карточки с объяснениями.
@@ -116,18 +124,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 
   Future<void> _editParam(IntentParam param) async {
-    final options = IntentParam.options[param.type] ?? const <ParamOption>[];
-    final picked = await showAppSheet<ParamOption>(
+    final l10n = context.l10n;
+    final options = IntentParam.options[param.type] ?? const <String>[];
+    final picked = await showAppSheet<String>(
       context,
-      title: param.type.label,
-      subtitle: param.inferred ? 'Это я додумал сам — поправь, если не так' : null,
+      title: l10n.label(param.type),
+      subtitle: param.inferred ? l10n.search.inferredParamHint : null,
       builder: (sheetContext) => Column(
         children: [
-          for (final option in options)
+          for (final code in options)
             SheetOption(
-              label: option.label,
-              selected: option.code == param.code,
-              onTap: () => Navigator.of(sheetContext).pop(option),
+              label: l10n.paramOption(param.type, code),
+              selected: code == param.code,
+              onTap: () => Navigator.of(sheetContext).pop(code),
             ),
         ],
       ),
@@ -136,7 +145,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
       return;
     }
     await _applyIntent(
-      _intent.withParam(IntentParam(type: param.type, code: picked.code, label: picked.label)),
+      _intent.withParam(IntentParam(type: param.type, code: picked)),
     );
   }
 
@@ -146,19 +155,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
       await AppNavigator.openSearch(context, query: _intent.query);
       return;
     }
+    final l10n = context.l10n;
     final type = await showAppSheet<ParamType>(
       context,
-      title: 'Что уточнить?',
+      title: l10n.search.refineTitle,
       builder: (sheetContext) => Column(
         children: [
           for (final t in missing)
             SheetOption(
-              label: t.label,
+              label: l10n.label(t),
               selected: false,
               onTap: () => Navigator.of(sheetContext).pop(t),
             ),
           SheetOption(
-            label: 'Переписать запрос',
+            label: l10n.search.rewriteQuery,
             icon: Icons.edit_outlined,
             selected: false,
             onTap: () {
@@ -175,22 +185,23 @@ class _ResultsScreenState extends State<ResultsScreen> {
     if (type == null) {
       return;
     }
-    final options = IntentParam.options[type] ?? const <ParamOption>[];
+    final options = IntentParam.options[type] ?? const <String>[];
     if (options.isEmpty) {
       return;
     }
-    await _editParam(IntentParam(type: type, code: '', label: type.label));
+    await _editParam(IntentParam(type: type, code: ''));
   }
 
   Future<void> _pickSort() async {
+    final l10n = context.l10n;
     final picked = await showAppSheet<_Sort>(
       context,
-      title: 'Сортировка',
+      title: l10n.search.sortTitle,
       builder: (sheetContext) => Column(
         children: [
           for (final sort in _Sort.values)
             SheetOption(
-              label: sort.label,
+              label: sort.title(l10n),
               selected: sort == _sort,
               onTap: () => Navigator.of(sheetContext).pop(sort),
             ),
@@ -215,6 +226,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final visible = _visible;
+    final l10n = context.l10n;
+    final s = l10n.search;
 
     return AnnotatedRegion(
       value: AppTheme.overlayOnLight,
@@ -260,12 +273,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 24, 12, 8),
                     child: Row(
                       children: [
-                        const Expanded(
-                          child: Text('Вот что нашёл для тебя', style: AppText.h2),
+                        Expanded(
+                          child: Text(s.foundForYou, style: AppText.h2),
                         ),
                         Pressable(
                           onTap: _pickSort,
-                          semanticLabel: 'Сортировка: ${_sort.label}',
+                          semanticLabel: s.sortSemantic(_sort.title(l10n)),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 44),
                             child: Row(
@@ -279,7 +292,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                 const SizedBox(width: 4),
                                 ExcludeSemantics(
                                   child: Text(
-                                    _sort == _Sort.best ? 'Лучшее' : _sort.label,
+                                    _sort == _Sort.best ? s.sortBestShort : _sort.title(l10n),
                                     style: AppText.caption.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ),
@@ -297,8 +310,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       for (final filter in _KindFilter.values)
                         SelectChip(
                           label: filter == _KindFilter.all
-                              ? '${filter.label} · ${_items.length}'
-                              : filter.label,
+                              ? '${filter.title(l10n)} · ${_items.length}'
+                              : filter.title(l10n),
                           selected: filter == _filter,
                           onTap: () => setState(() => _filter = filter),
                         ),
@@ -315,11 +328,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   SliverToBoxAdapter(
                     child: EmptyState(
                       icon: Icons.search_off_rounded,
-                      title: 'Ничего не нашлось',
+                      title: s.emptyTitle,
                       message: _filter == _KindFilter.all
-                          ? 'Попробуй убрать один из параметров или увеличить бюджет'
-                          : 'В этой категории пусто — посмотри все варианты',
-                      actionLabel: _filter == _KindFilter.all ? 'Изменить запрос' : 'Показать все',
+                          ? s.emptyAllMessage
+                          : s.emptyFilterMessage,
+                      actionLabel: _filter == _KindFilter.all ? s.changeQuery : s.showAll,
                       onAction: _filter == _KindFilter.all
                           ? () => AppNavigator.openSearch(context, query: _intent.query)
                           : () => setState(() => _filter = _KindFilter.all),
@@ -374,6 +387,7 @@ class _UnderstoodPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n.search;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(14),
@@ -389,7 +403,7 @@ class _UnderstoodPanel extends StatelessWidget {
               const Icon(Icons.auto_awesome, size: 18, color: AppColors.primaryInk),
               const SizedBox(width: 8),
               Text(
-                'Я понял тебя',
+                s.understood,
                 style: AppText.bodyStrong.copyWith(color: AppColors.primaryInk),
               ),
             ],
@@ -412,7 +426,7 @@ class _UnderstoodPanel extends StatelessWidget {
           if (intent.hasInferred) ...[
             const SizedBox(height: 10),
             Text(
-              'Пунктир — это я додумал сам. Нажми на параметр, чтобы изменить.',
+              s.inferredHint,
               style: AppText.micro.copyWith(color: AppColors.inkBody, fontWeight: FontWeight.w500),
             ),
           ],
@@ -429,6 +443,7 @@ class _SurpriseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n.search;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
       decoration: BoxDecoration(
@@ -438,19 +453,19 @@ class _SurpriseCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Не то, что искал?', style: AppText.bodyStrong),
-                SizedBox(height: 2),
-                Text('Уточни запрос или доверься случаю', style: AppText.caption),
+                Text(s.surpriseTitle, style: AppText.bodyStrong),
+                const SizedBox(height: 2),
+                Text(s.surpriseSubtitle, style: AppText.caption),
               ],
             ),
           ),
           const SizedBox(width: 12),
           PrimaryButton(
-            label: 'Удиви меня',
+            label: s.surpriseMe,
             icon: Icons.casino_outlined,
             variant: ButtonVariant.outline,
             height: 44,

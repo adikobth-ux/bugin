@@ -1,15 +1,23 @@
+import 'package:bugin/models/common.dart';
+
+/// Интересы из профиля. Подписи — в `AppStrings.label`.
 enum Interest {
-  dates('Свидания'),
-  active('Активный отдых'),
-  coffee('Кофе'),
-  concerts('Концерты'),
-  art('Искусство'),
-  cinema('Кино'),
-  food('Гастрономия');
+  dates,
+  active,
+  coffee,
+  concerts,
+  art,
+  cinema,
+  food;
 
-  const Interest(this.label);
-
-  final String label;
+  static Interest? tryParse(String? name) {
+    for (final value in Interest.values) {
+      if (value.name == name) {
+        return value;
+      }
+    }
+    return null;
+  }
 }
 
 class UserProfile {
@@ -26,6 +34,19 @@ class UserProfile {
     },
   });
 
+  factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
+        name: json['name'] as String? ?? '',
+        bio: json['bio'] as String? ?? '',
+        interests: parseEnumSet(json['interests'], Interest.tryParse).toList(),
+        typicalBudget: json['typicalBudget'] as int? ?? 10000,
+        searchCount: json['searchCount'] as int? ?? 0,
+        notifications: {
+          for (final entry
+              in (json['notifications'] as Map<String, dynamic>? ?? const {}).entries)
+            if (entry.value is bool) entry.key: entry.value as bool,
+        },
+      );
+
   final String name;
   final String bio;
   final List<Interest> interests;
@@ -39,6 +60,15 @@ class UserProfile {
 
   String get initials =>
       name.isEmpty ? '?' : String.fromCharCode(name.runes.first).toUpperCase();
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'bio': bio,
+        'interests': interests.map((i) => i.name).toList(),
+        'typicalBudget': typicalBudget,
+        'searchCount': searchCount,
+        'notifications': notifications,
+      };
 
   UserProfile copyWith({
     String? name,

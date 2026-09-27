@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bugin/core/formatters.dart';
+import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/app_services.dart';
 import 'package:bugin/services/favorites_store.dart';
@@ -98,24 +99,28 @@ class _PlaceScreenState extends State<PlaceScreen> {
   }
 
   String _slotText(Place place) {
+    final strings = context.l10n.place;
     final slot = _currentSlot(place);
     if (slot == null) {
-      return 'Завтра, ${Fmt.hm(place.openingHours.opensAt + 60)}';
+      return strings.tomorrowAt(Fmt.hm(place.openingHours.opensAt + 60));
     }
-    return 'Сегодня, ${Fmt.hm(slot)}';
+    return strings.todayAt(Fmt.hm(slot));
   }
 
   Future<void> _pickSlot(Place place) async {
+    final l10n = context.l10n;
     final slots = _slots(place);
     if (slots.isEmpty) {
-      showAppSnack(context, 'На сегодня свободного времени нет — попробуй завтра');
+      showAppSnack(context, l10n.place.noSlotsToday);
       return;
     }
     final current = _currentSlot(place);
     final picked = await showAppSheet<int>(
       context,
-      title: place.bookingType == BookingType.ticket ? 'Выбери сеанс' : 'Выбери время',
-      subtitle: 'Сегодня',
+      title: place.bookingType == BookingType.ticket
+          ? l10n.place.pickSession
+          : l10n.place.pickTime,
+      subtitle: l10n.today,
       builder: (sheetContext) => Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -136,11 +141,14 @@ class _PlaceScreenState extends State<PlaceScreen> {
   }
 
   Future<void> _book(Place place) async {
+    final strings = context.l10n.place;
     final slotText = _slotText(place);
     final isTicket = place.bookingType == BookingType.ticket;
     final confirmed = await showAppSheet<bool>(
       context,
-      title: isTicket ? 'Билеты · ${place.name}' : 'Бронь · ${place.name}',
+      title: isTicket
+          ? strings.ticketsTitle(place.name)
+          : strings.bookingTitle(place.name),
       builder: (sheetContext) => _BookingSheet(
         slotText: slotText,
         isTicket: isTicket,
@@ -152,32 +160,31 @@ class _PlaceScreenState extends State<PlaceScreen> {
       HapticFeedback.mediumImpact();
       showAppSnack(
         context,
-        isTicket
-            ? 'Готово! $slotText — это демо, реальной оплаты нет'
-            : 'Готово! $slotText — это демо, реальной брони нет',
+        isTicket ? strings.paidDemo(slotText) : strings.bookedDemo(slotText),
       );
     }
   }
 
   void _share(Place place) {
+    final strings = context.l10n.place;
     Clipboard.setData(
-      ClipboardData(text: '${place.name}, ${place.address} — нашёл в Bugin'),
+      ClipboardData(text: strings.shareText(place.name, place.address)),
     );
-    showAppSnack(context, 'Скопировано — можно отправить другу');
+    showAppSnack(context, strings.copied);
   }
 
   void _call(Place place) =>
-      showDemoSnack(context, 'звонок на ${place.phone} подключим вместе с телефонией');
+      showDemoSnack(context, context.l10n.place.callDemo(place.phone));
 
   void _route(Place place) =>
-      showDemoSnack(context, 'маршрут до «${place.name}» откроется в картах');
+      showDemoSnack(context, context.l10n.place.routeDemo(place.name));
 
   void _openReviews(Place place) {
+    final strings = context.l10n.place;
     showAppSheet<void>(
       context,
-      title: 'Отзывы',
-      subtitle:
-          '${Fmt.rating(place.rating)} из 5 · ${Fmt.thousands(place.reviewsCount)} оценок',
+      title: strings.reviews,
+      subtitle: strings.reviewsSummary(place.rating, place.reviewsCount),
       builder: (sheetContext) => Column(
         children: [
           for (final review in place.reviews)
@@ -193,14 +200,15 @@ class _PlaceScreenState extends State<PlaceScreen> {
   // ---------- Вёрстка ----------
 
   Widget _buildPlace(Place place) {
+    final l10n = context.l10n;
+    final strings = l10n.place;
     final photos = place.photos;
-    final priceText = place.isFree
-        ? 'бесплатно'
-        : '${Fmt.approxTenge(place.averageCheck)} / чел.';
+    final priceText =
+        place.isFree ? strings.free : strings.perPerson(place.averageCheck);
 
     return DetailScaffold(
       image: place.cover,
-      badge: place.category.label,
+      badge: l10n.label(place.category),
       title: place.name,
       subtitle: place.subtitle,
       placeholderIcon: Visuals.placeIcon(place.category),
@@ -218,7 +226,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
         CircleIconButton(
           icon: Icons.ios_share_rounded,
           style: onImage ? CircleButtonStyle.overlay : CircleButtonStyle.surface,
-          semanticLabel: 'Поделиться',
+          semanticLabel: strings.share,
           onPressed: () => _share(place),
         ),
         FavoriteButton(
@@ -231,7 +239,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
       bottomBar: _actionBar(place),
       body: [
         if (widget.reasons.isNotEmpty) ...[
-          ReasonsCard(title: 'Почему тебе подойдёт', reasons: widget.reasons),
+          ReasonsCard(title: strings.reasonsTitle, reasons: widget.reasons),
           const SizedBox(height: 12),
         ],
         InfoCard(
@@ -240,15 +248,15 @@ class _PlaceScreenState extends State<PlaceScreen> {
               icon: Icons.schedule_rounded,
               title: _OpenStatus(hours: place.openingHours),
               subtitle: place.openingHours.isAlwaysOpen
-                  ? 'Без выходных'
-                  : 'Ежедневно ${place.openingHours.range}',
+                  ? strings.noDaysOff
+                  : strings.daily(l10n.hoursRange(place.openingHours)),
             ),
             _AddressBlock(place: place, onRoute: () => _route(place)),
             if (place.phone.isNotEmpty)
               InfoRow.text(
                 icon: Icons.phone_outlined,
                 title: place.phone,
-                subtitle: 'Позвонить',
+                subtitle: strings.call,
                 trailing: const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.inkSecondary,
@@ -266,23 +274,23 @@ class _PlaceScreenState extends State<PlaceScreen> {
           ),
         ],
         if (place.amenities.isNotEmpty) ...[
-          const SectionHeader.inset(title: 'Удобства'),
+          SectionHeader.inset(title: strings.amenities),
           _AmenityGrid(amenities: place.amenities),
         ],
-        const SectionHeader.inset(title: 'О месте'),
+        SectionHeader.inset(title: strings.about),
         ExpandableText(place.description),
         if (place.reviews.isNotEmpty) ...[
           SectionHeader.inset(
-            title: 'Отзывы',
-            actionLabel: 'Все ${Fmt.thousands(place.reviewsCount)}',
+            title: strings.reviews,
+            actionLabel: strings.allCount(Fmt.thousands(place.reviewsCount)),
             onAction: () => _openReviews(place),
           ),
           ReviewCard(review: place.reviews.first),
         ],
         if (photos.length > 1) ...[
           SectionHeader.inset(
-            title: 'Галерея',
-            actionLabel: 'Все ${photos.length}',
+            title: strings.gallery,
+            actionLabel: strings.allCount('${photos.length}'),
             onAction: () => GalleryViewer.open(context, photos),
           ),
           SizedBox(
@@ -294,7 +302,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, i) => Pressable(
                 onTap: () => GalleryViewer.open(context, photos, initialIndex: i + 1),
-                semanticLabel: 'Фото ${i + 2} из ${photos.length}',
+                semanticLabel: strings.photoLabel(i + 2, photos.length),
                 child: AppImage(
                   photos[i + 1],
                   width: 124,
@@ -310,6 +318,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
   }
 
   Widget _actionBar(Place place) {
+    final l10n = context.l10n;
     if (place.bookingType == BookingType.none) {
       return StickyActionBar(
         child: Row(
@@ -317,7 +326,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
             if (place.phone.isNotEmpty) ...[
               Expanded(
                 child: PrimaryButton(
-                  label: 'Позвонить',
+                  label: l10n.place.call,
                   icon: Icons.phone_outlined,
                   variant: ButtonVariant.outline,
                   onPressed: () => _call(place),
@@ -327,7 +336,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
             ],
             Expanded(
               child: PrimaryButton(
-                label: 'Маршрут',
+                label: l10n.route,
                 icon: Icons.near_me_outlined,
                 onPressed: () => _route(place),
               ),
@@ -343,14 +352,16 @@ class _PlaceScreenState extends State<PlaceScreen> {
       child: Row(
         children: [
           _SlotButton(
-            title: slot == null ? 'Завтра' : (isTicket ? 'Сеанс сегодня' : 'Сегодня'),
+            title: slot == null
+                ? l10n.tomorrow
+                : (isTicket ? l10n.place.sessionToday : l10n.today),
             value: Fmt.hm(slot ?? place.openingHours.opensAt + 60),
             onTap: () => _pickSlot(place),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: PrimaryButton(
-              label: isTicket ? 'Купить билет' : 'Забронировать',
+              label: isTicket ? l10n.place.buyTicket : l10n.place.book,
               onPressed: () => _book(place),
             ),
           ),
@@ -367,15 +378,17 @@ class _OpenStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final strings = l10n.place;
     if (hours.isAlwaysOpen) {
       return Text.rich(
         TextSpan(
           children: [
             TextSpan(
-              text: 'Открыто',
+              text: strings.open,
               style: AppText.bodyStrong.copyWith(color: AppColors.success),
             ),
-            const TextSpan(text: ' · круглосуточно'),
+            TextSpan(text: ' · ${strings.aroundTheClock}'),
           ],
         ),
       );
@@ -385,15 +398,15 @@ class _OpenStatus extends StatelessWidget {
       TextSpan(
         children: [
           TextSpan(
-            text: open ? 'Открыто' : 'Закрыто',
+            text: open ? strings.open : strings.closed,
             style: AppText.bodyStrong.copyWith(
               color: open ? AppColors.success : AppColors.danger,
             ),
           ),
           TextSpan(
             text: open
-                ? ' · до ${Fmt.hm(hours.closesAt)}'
-                : ' · откроется в ${Fmt.hm(hours.opensAt)}',
+                ? ' · ${l10n.untilTime(hours.closesAt)}'
+                : ' · ${strings.opensAt(hours.opensAt)}',
           ),
         ],
       ),
@@ -425,7 +438,8 @@ class _AddressBlock extends StatelessWidget {
                     Text(place.address, style: AppText.bodyStrong),
                     const SizedBox(height: 2),
                     Text(
-                      '${Fmt.distance(place.distanceKm)} · ${place.taxiMinutes} мин на такси',
+                      '${Fmt.distance(place.distanceKm)} · '
+                      '${context.l10n.place.byTaxi(place.taxiMinutes)}',
                       style: AppText.caption,
                     ),
                   ],
@@ -448,6 +462,7 @@ class _AmenityGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 300 ? 2 : 1;
@@ -479,7 +494,7 @@ class _AmenityGrid extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              amenity.type.label,
+                              l10n.label(amenity.type),
                               style: AppText.label.copyWith(fontWeight: FontWeight.w700),
                             ),
                             Text(amenity.value, style: AppText.caption),
@@ -508,7 +523,7 @@ class _SlotButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
-      semanticLabel: '$title: $value. Изменить',
+      semanticLabel: context.l10n.place.slotSemantics(title, value),
       child: Container(
         height: 54,
         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -566,6 +581,7 @@ class _BookingSheetState extends State<_BookingSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n.place;
     final total = widget.pricePerPerson * _guests;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -575,12 +591,12 @@ class _BookingSheetState extends State<_BookingSheet> {
             InfoRow.text(
               icon: Icons.schedule_rounded,
               title: widget.slotText,
-              subtitle: widget.isTicket ? 'Сеанс' : 'Время',
+              subtitle: widget.isTicket ? strings.sessionLabel : strings.timeLabel,
             ),
             InfoRow.text(
               icon: Icons.people_outline_rounded,
-              title: '$_guests ${Fmt.plural(_guests, 'гость', 'гостя', 'гостей')}',
-              subtitle: widget.isTicket ? 'Количество билетов' : 'Сколько вас будет',
+              title: strings.guests(_guests),
+              subtitle: widget.isTicket ? strings.ticketCount : strings.partySize,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -588,14 +604,14 @@ class _BookingSheetState extends State<_BookingSheet> {
                     icon: Icons.remove_rounded,
                     style: CircleButtonStyle.soft,
                     size: 36,
-                    semanticLabel: 'Меньше',
+                    semanticLabel: strings.less,
                     onPressed: _guests > 1 ? () => setState(() => _guests--) : null,
                   ),
                   CircleIconButton(
                     icon: Icons.add_rounded,
                     style: CircleButtonStyle.soft,
                     size: 36,
-                    semanticLabel: 'Больше',
+                    semanticLabel: strings.more,
                     onPressed: _guests < 8 ? () => setState(() => _guests++) : null,
                   ),
                 ],
@@ -606,19 +622,14 @@ class _BookingSheetState extends State<_BookingSheet> {
         const SizedBox(height: 12),
         if (widget.pricePerPerson > 0)
           Text(
-            widget.isTicket
-                ? 'Итого: ${Fmt.tenge(total)}'
-                : 'Средний счёт на всех: ${Fmt.approxTenge(total)}',
+            widget.isTicket ? strings.total(total) : strings.averageTotal(total),
             style: AppText.bodyStrong,
           ),
         const SizedBox(height: 4),
-        const Text(
-          'Это прототип: подтверждение ничего не бронирует и не списывает.',
-          style: AppText.caption,
-        ),
+        Text(strings.prototypeNote, style: AppText.caption),
         const SizedBox(height: 16),
         PrimaryButton(
-          label: widget.isTicket ? 'Перейти к оплате' : 'Подтвердить бронь',
+          label: widget.isTicket ? strings.goToPayment : strings.confirmBooking,
           onPressed: widget.onConfirm,
         ),
       ],
