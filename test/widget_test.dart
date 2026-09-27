@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bugin/app.dart';
@@ -5,6 +6,7 @@ import 'package:bugin/core/formatters.dart';
 import 'package:bugin/data/mock_events.dart';
 import 'package:bugin/data/mock_places.dart';
 import 'package:bugin/models/models.dart';
+import 'package:bugin/screens/home/home_screen.dart';
 import 'package:bugin/services/app_services.dart';
 import 'package:bugin/services/mock/mock_evening_planner.dart';
 import 'package:bugin/services/mock/mock_search_service.dart';
@@ -76,10 +78,27 @@ void main() {
   });
 
   testWidgets('приложение запускается и показывает главную', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(BuginApp(services: AppServices.mock(latency: Duration.zero)));
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
-    expect(find.text('Bugin'), findsOneWidget);
-    expect(find.text('Собрать мне вечер'), findsOneWidget);
+
+    // Что реально на экране — попадёт в сообщение, если проверка не пройдёт.
+    final onScreen = tester
+        .widgetList<Text>(find.byType(Text))
+        .map((t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+        .take(30)
+        .join(' | ');
+    final everything = tester
+        .widgetList<Text>(find.byType(Text, skipOffstage: false))
+        .map((t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+        .take(30)
+        .join(' | ');
+
+    expect(find.byType(HomeScreen, skipOffstage: false), findsOneWidget, reason: everything);
+    expect(find.text('Bugin'), findsOneWidget, reason: 'на экране: $onScreen\nвсе: $everything');
+    expect(find.text('Собрать мне вечер'), findsOneWidget, reason: onScreen);
   });
 }
