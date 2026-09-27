@@ -43,13 +43,13 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: .github/scripts/run.sh "flutter analyze" flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Tests
-        run: flutter test
+        run: .github/scripts/run.sh "flutter test" flutter test --reporter expanded
 
       - name: Build APK
-        run: flutter build apk --release
+        run: .github/scripts/run.sh "build apk" flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -58,7 +58,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Build web
-        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        run: .github/scripts/run.sh "build web" flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
       # APK кладём рядом с веб-версией, чтобы скачать его прямо с телефона.
       - name: Add APK to web build
