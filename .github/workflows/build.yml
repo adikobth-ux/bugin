@@ -51,8 +51,23 @@ jobs:
       - name: Tests
         run: .github/scripts/run.sh "flutter test" flutter test --reporter expanded
 
+      # Один и тот же ключ подписи в каждой сборке, чтобы новая версия APK
+      # ставилась поверх старой. Это отладочный ключ прототипа; для магазина
+      # приложений нужен свой ключ в секретах репозитория.
+      - name: Stable signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          cp .github/android/debug.keystore "$HOME/.android/debug.keystore"
+          if [ -n "${ANDROID_USER_HOME:-}" ]; then
+            mkdir -p "$ANDROID_USER_HOME"
+            cp .github/android/debug.keystore "$ANDROID_USER_HOME/debug.keystore"
+          fi
+
       - name: Build APK
         run: .github/scripts/run.sh "build apk" flutter build apk --release
+
+      - name: APK signature
+        run: echo "::notice title=APK signature::$(keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk | grep -m1 'SHA256:')"
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
