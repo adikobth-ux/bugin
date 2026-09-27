@@ -67,7 +67,9 @@ jobs:
         run: .github/scripts/run.sh "build apk" flutter build apk --release
 
       - name: APK signature
-        run: echo "::notice title=APK signature::$(keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk | grep -m1 'SHA256:')"
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          echo "::notice title=APK signature::$("$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep -m1 'SHA-256')"
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
