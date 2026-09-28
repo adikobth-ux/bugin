@@ -2,7 +2,7 @@
 
 Кликабельный прототип приложения Bugin для Android и iOS на Flutter.
 По умолчанию работает на mock data: без backend, AI, авторизации, реальных броней и оплат.
-Может брать данные с тестового сервера — см. «Сервер».
+Сборки из CI (APK и веб-версия) берут данные с тестового сервера — см. «Сервер».
 Два языка — русский и казахский. Избранное, профиль, история поиска, город и язык
 сохраняются на телефоне.
 
@@ -81,9 +81,10 @@ flutter run --dart-define=BUGIN_API_URL=https://<хост>
 flutter build apk --release --dart-define=BUGIN_API_URL=https://<хост>
 ```
 
-- В CI адрес берётся из переменной репозитория `BUGIN_API_URL`:
-  Settings → Secrets and variables → Actions → Variables. Если она не задана,
-  APK и веб-версия собираются на тестовых данных, как раньше.
+- CI собирает APK и веб-версию на тестовый сервер **https://bugin-api.onrender.com**
+  (бесплатный Render: после 15 минут простоя первый ответ идёт около минуты).
+  Другой адрес — переменная репозитория `BUGIN_API_URL` (Settings → Secrets and
+  variables → Actions → Variables); значение `mock` — собрать без сервера.
 - Контракт API — [docs/api.md](https://github.com/adikobth-ux/bugin-backend/blob/HEAD/docs/api.md)
   в репозитории сервера; клиент — `lib/services/api`, тесты — `test/api_test.dart`.
 - Избранное, профиль и история поиска пока хранятся на телефоне (вход появится позже).

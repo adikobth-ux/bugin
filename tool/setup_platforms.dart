@@ -34,6 +34,14 @@ void _android() {
     RegExp(r'android:label="[^"]*"'),
     'android:label="$appName"',
   );
+  // Данные с сервера: шаблон Flutter даёт доступ в интернет только отладочной
+  // сборке, release-APK без этой строки не достучится до сервера.
+  if (!updated.contains('android.permission.INTERNET')) {
+    updated = updated.replaceFirstMapped(
+      RegExp(r'<manifest[^>]*>'),
+      (m) => '${m[0]}\n    <uses-permission android:name="android.permission.INTERNET" />',
+    );
+  }
   // «Купить билет» открывает Ticketon/Kino.kz: Android 11+ должен знать,
   // что приложение открывает https-ссылки в других приложениях.
   if (!updated.contains('android:scheme="https"')) {

@@ -18,6 +18,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    env:
+      # Адрес сервера для APK и веб-версии (без /v1). Переопределяется переменной
+      # репозитория BUGIN_API_URL (Settings → Secrets and variables → Actions → Variables);
+      # значение mock — собрать на тестовых данных внутри приложения, без сервера.
+      BUGIN_API_URL: ${{ vars.BUGIN_API_URL || 'https://bugin-api.onrender.com' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -51,16 +56,21 @@ jobs:
       - name: Tests
         run: .github/scripts/run.sh "flutter test" flutter test --reporter expanded
 
-      # Адрес сервера — переменная репозитория BUGIN_API_URL
-      # (Settings → Secrets and variables → Actions → Variables).
-      # Пустая — приложение на тестовых данных прототипа.
+      # ${BUGIN_API_URL#mock}: значение mock превращается в пустую строку.
       - name: Build APK
-        run: .github/scripts/run.sh "build apk" flutter build apk --release "--dart-define=BUGIN_API_URL=${{ vars.BUGIN_API_URL }}"
+        run: .github/scripts/run.sh "build apk" flutter build apk --release "--dart-define=BUGIN_API_URL=${BUGIN_API_URL#mock}"
 
-      - name: APK signature
+      # Подпись (одна на все сборки) и доступ в интернет, без него сервер недоступен.
+      - name: APK check
         run: |
-          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
-          echo "::notice title=APK signature::$("$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep -m1 'SHA-256')"
+          tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          echo "::notice title=APK signature::$("$tools/apksigner" verify --print-certs "$apk" | grep -m1 'SHA-256')"
+          if ! "$tools/aapt2" dump permissions "$apk" | grep -q 'android.permission.INTERNET'; then
+            echo "::error title=APK::нет разрешения INTERNET — приложение не достучится до сервера"
+            exit 1
+          fi
+          echo "::notice title=Сервер::${BUGIN_API_URL#mock}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -69,7 +79,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Build web
-        run: .github/scripts/run.sh "build web" flutter build web --release --base-href "/${{ github.event.repository.name }}/" "--dart-define=BUGIN_API_URL=${{ vars.BUGIN_API_URL }}"
+        run: .github/scripts/run.sh "build web" flutter build web --release --base-href "/${{ github.event.repository.name }}/" "--dart-define=BUGIN_API_URL=${BUGIN_API_URL#mock}"
 
       # APK кладём рядом с веб-версией, чтобы скачать его прямо с телефона.
       - name: Add APK to web build
