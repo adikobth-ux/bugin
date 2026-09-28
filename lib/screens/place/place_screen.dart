@@ -5,6 +5,7 @@ import 'package:bugin/core/formatters.dart';
 import 'package:bugin/l10n/app_strings.dart';
 import 'package:bugin/models/models.dart';
 import 'package:bugin/services/app_services.dart';
+import 'package:bugin/services/external_links.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
@@ -117,9 +118,7 @@ class _PlaceScreenState extends State<PlaceScreen> {
     final current = _currentSlot(place);
     final picked = await showAppSheet<int>(
       context,
-      title: place.bookingType == BookingType.ticket
-          ? l10n.place.pickSession
-          : l10n.place.pickTime,
+      title: l10n.place.pickTime,
       subtitle: l10n.today,
       builder: (sheetContext) => Wrap(
         spacing: 8,
@@ -143,25 +142,26 @@ class _PlaceScreenState extends State<PlaceScreen> {
   Future<void> _book(Place place) async {
     final strings = context.l10n.place;
     final slotText = _slotText(place);
-    final isTicket = place.bookingType == BookingType.ticket;
     final confirmed = await showAppSheet<bool>(
       context,
-      title: isTicket
-          ? strings.ticketsTitle(place.name)
-          : strings.bookingTitle(place.name),
+      title: strings.bookingTitle(place.name),
       builder: (sheetContext) => _BookingSheet(
         slotText: slotText,
-        isTicket: isTicket,
         pricePerPerson: place.averageCheck,
         onConfirm: () => Navigator.of(sheetContext).pop(true),
       ),
     );
     if (confirmed == true && mounted) {
       HapticFeedback.mediumImpact();
-      showAppSnack(
-        context,
-        isTicket ? strings.paidDemo(slotText) : strings.bookedDemo(slotText),
-      );
+      showAppSnack(context, strings.bookedDemo(slotText));
+    }
+  }
+
+  /// Билеты продаёт оператор (Kino.kz, Ticketon): открываем его страницу.
+  Future<void> _openTickets(String url) async {
+    final opened = await AppScope.of(context).links.open(Uri.parse(url));
+    if (!opened && mounted) {
+      showAppSnack(context, context.l10n.linkOpenFailed);
     }
   }
 
@@ -346,22 +346,53 @@ class _PlaceScreenState extends State<PlaceScreen> {
       );
     }
 
-    final isTicket = place.bookingType == BookingType.ticket;
+    if (place.bookingType == BookingType.ticket) {
+      final url = place.bookingUrl;
+      return StickyActionBar(
+        child: Row(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.averageCheck(place.averageCheck),
+                  style: AppText.h2.copyWith(letterSpacing: 0),
+                ),
+                Text(
+                  url == null
+                      ? l10n.event.ticketsSoon
+                      : l10n.ticketsOn(linkProviderName(Uri.parse(url))),
+                  style: AppText.micro,
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: PrimaryButton(
+                label: l10n.place.buyTicket,
+                icon: Icons.open_in_new_rounded,
+                onPressed: url == null ? null : () => _openTickets(url),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final slot = _currentSlot(place);
     return StickyActionBar(
       child: Row(
         children: [
           _SlotButton(
-            title: slot == null
-                ? l10n.tomorrow
-                : (isTicket ? l10n.place.sessionToday : l10n.today),
+            title: slot == null ? l10n.tomorrow : l10n.today,
             value: Fmt.hm(slot ?? place.openingHours.opensAt + 60),
             onTap: () => _pickSlot(place),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: PrimaryButton(
-              label: isTicket ? l10n.place.buyTicket : l10n.place.book,
+              label: l10n.place.book,
               onPressed: () => _book(place),
             ),
           ),
@@ -558,17 +589,15 @@ class _SlotButton extends StatelessWidget {
   }
 }
 
-/// Подтверждение брони/покупки (демо): время, гости, итог.
+/// Подтверждение брони столика или дорожки (демо): время, гости, итог.
 class _BookingSheet extends StatefulWidget {
   const _BookingSheet({
     required this.slotText,
-    required this.isTicket,
     required this.pricePerPerson,
     required this.onConfirm,
   });
 
   final String slotText;
-  final bool isTicket;
   final int pricePerPerson;
   final VoidCallback onConfirm;
 
@@ -591,12 +620,12 @@ class _BookingSheetState extends State<_BookingSheet> {
             InfoRow.text(
               icon: Icons.schedule_rounded,
               title: widget.slotText,
-              subtitle: widget.isTicket ? strings.sessionLabel : strings.timeLabel,
+              subtitle: strings.timeLabel,
             ),
             InfoRow.text(
               icon: Icons.people_outline_rounded,
               title: strings.guests(_guests),
-              subtitle: widget.isTicket ? strings.ticketCount : strings.partySize,
+              subtitle: strings.partySize,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -622,14 +651,14 @@ class _BookingSheetState extends State<_BookingSheet> {
         const SizedBox(height: 12),
         if (widget.pricePerPerson > 0)
           Text(
-            widget.isTicket ? strings.total(total) : strings.averageTotal(total),
+            strings.averageTotal(total),
             style: AppText.bodyStrong,
           ),
         const SizedBox(height: 4),
         Text(strings.prototypeNote, style: AppText.caption),
         const SizedBox(height: 16),
         PrimaryButton(
-          label: widget.isTicket ? strings.goToPayment : strings.confirmBooking,
+          label: strings.confirmBooking,
           onPressed: widget.onConfirm,
         ),
       ],

@@ -16,6 +16,7 @@ import 'package:bugin/navigation/app_routes.dart';
 import 'package:bugin/navigation/app_tab.dart';
 import 'package:bugin/screens/home/home_screen.dart';
 import 'package:bugin/services/app_services.dart';
+import 'package:bugin/services/external_links.dart';
 import 'package:bugin/services/mock/mock_search_service.dart';
 import 'package:bugin/widgets/city_button.dart';
 
@@ -72,9 +73,11 @@ void main() {
           tester.platformDispatcher.clearTextScaleFactorTestValue();
         });
 
+        final links = RecordingLinks();
         final services = AppServices.mock(
           latency: Duration.zero,
           deviceLanguage: language,
+          links: links,
         );
         final l10n = AppStrings.forLanguage(language);
 
@@ -219,6 +222,13 @@ void main() {
 
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(problems, isEmpty, reason: problems.join('\n'));
+
+        // «Купить билет» ведёт к операторам, а не в оплату внутри приложения.
+        expect(
+          links.opened.map((uri) => uri.host).toSet(),
+          containsAll(<String>['ticketon.kz', 'kino.kz']),
+          reason: '${links.opened}',
+        );
 
         // Дожидаемся отложенных таймеров, чтобы тест завершился чисто.
         await tester.pumpWidget(const SizedBox.shrink());

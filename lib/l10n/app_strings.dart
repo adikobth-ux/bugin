@@ -81,6 +81,12 @@ class AppStrings extends L10nSection {
   String get removeFromFavorites =>
       tr('Убрать из избранного', 'Таңдаулылардан алып тастау');
 
+  /// Подпись под ценой: «билеты на Ticketon» / «Ticketon арқылы».
+  String ticketsOn(String provider) => tr('билеты на $provider', '$provider арқылы');
+
+  String get linkOpenFailed =>
+      tr('Не получилось открыть ссылку', 'Сілтемені ашу мүмкін болмады');
+
   /// Сообщение для действий, которых в прототипе нет (бронь, оплата, звонок).
   String demo(String message) => tr('Демо: $message', 'Демо: $message');
 

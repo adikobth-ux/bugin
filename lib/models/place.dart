@@ -125,6 +125,7 @@ class Place {
     required this.vibes,
     required this.location,
     this.reviews = const [],
+    this.bookingUrl,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) => Place(
@@ -158,6 +159,7 @@ class Place {
         reviews: (json['reviews'] as List? ?? const [])
             .map((e) => Review.fromJson(e as Map<String, dynamic>))
             .toList(),
+        bookingUrl: json['bookingUrl'] as String?,
       );
 
   final String id;
@@ -197,6 +199,10 @@ class Place {
   final GeoPoint location;
   final List<Review> reviews;
 
+  /// Где купить билет или забронировать у самого заведения или оператора
+  /// (для кинотеатра — Kino.kz). Bugin сам ничего не продаёт.
+  final String? bookingUrl;
+
   String get cover => photos.isEmpty ? '' : photos.first;
 
   bool get isFree => averageCheck == 0;
@@ -226,5 +232,6 @@ class Place {
         'vibes': vibes.map((v) => v.name).toList(),
         'location': location.toJson(),
         'reviews': reviews.map((r) => r.toJson()).toList(),
+        'bookingUrl': bookingUrl,
       };
 }

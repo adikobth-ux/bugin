@@ -6,6 +6,7 @@ import 'package:bugin/l10n/app_language.dart';
 import 'package:bugin/navigation/app_state.dart';
 import 'package:bugin/services/evening_planner.dart';
 import 'package:bugin/services/events_repository.dart';
+import 'package:bugin/services/external_links.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/services/mock/mock_evening_planner.dart';
 import 'package:bugin/services/mock/mock_events_repository.dart';
@@ -30,6 +31,7 @@ class AppServices {
     required this.profile,
     required this.history,
     required this.state,
+    this.links = const UrlLauncherLinks(),
     VoidCallback? restoreDefaults,
   }) : _restoreDefaults = restoreDefaults {
     state.language.addListener(_translateSavedScenarios);
@@ -45,6 +47,7 @@ class AppServices {
     KeyValueStore? storage,
     AppLanguage deviceLanguage = AppLanguage.ru,
     DateTime? now,
+    ExternalLinks links = const UrlLauncherLinks(),
   }) {
     final store = storage ?? MemoryKeyValueStore();
     final state = AppState(storage: store, language: deviceLanguage);
@@ -82,6 +85,7 @@ class AppServices {
       profile: profile,
       history: history,
       state: state,
+      links: links,
       restoreDefaults: () {
         favorites.reset(
           placeIds: MockProfile.favoritePlaceIds,
@@ -102,6 +106,9 @@ class AppServices {
   final ProfileStore profile;
   final SearchHistory history;
   final AppState state;
+
+  /// Переход на Ticketon, Kino.kz и сайты заведений.
+  final ExternalLinks links;
   final VoidCallback? _restoreDefaults;
 
   /// Можно ли вернуть данные прототипа к начальным (есть только у mock).

@@ -13,6 +13,7 @@ import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_state.dart';
 import 'package:bugin/screens/home/home_screen.dart';
 import 'package:bugin/services/app_services.dart';
+import 'package:bugin/services/external_links.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/services/mock/mock_evening_planner.dart';
 import 'package:bugin/services/mock/mock_search_service.dart';
@@ -54,6 +55,12 @@ void main() {
       expect(kk.longDate(DateTime(2026, 10, 3)), '3 қазан, сенбі');
       expect(kk.duration(120), '2 сағат');
       expect(kk.label(Occasion.friends), 'Достармен');
+    });
+
+    test('название оператора билетов по ссылке', () {
+      expect(linkProviderName(Uri.parse('https://ticketon.kz/astana')), 'Ticketon');
+      expect(linkProviderName(Uri.parse('https://www.kino.kz/ru/movie')), 'Kino.kz');
+      expect(linkProviderName(Uri.parse('https://example.kz/book')), 'example.kz');
     });
 
     test('казахские окончания после чисел', () {

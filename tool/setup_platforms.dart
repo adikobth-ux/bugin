@@ -30,10 +30,24 @@ void _android() {
     return;
   }
   final text = manifest.readAsStringSync();
-  final updated = text.replaceFirst(
+  var updated = text.replaceFirst(
     RegExp(r'android:label="[^"]*"'),
     'android:label="$appName"',
   );
+  // «Купить билет» открывает Ticketon/Kino.kz: Android 11+ должен знать,
+  // что приложение открывает https-ссылки в других приложениях.
+  if (!updated.contains('android:scheme="https"')) {
+    const intent = '<intent>\n'
+        '            <action android:name="android.intent.action.VIEW" />\n'
+        '            <data android:scheme="https" />\n'
+        '        </intent>';
+    updated = updated.contains('<queries>')
+        ? updated.replaceFirst('<queries>', '<queries>\n        $intent')
+        : updated.replaceFirst(
+            '</manifest>',
+            '    <queries>\n        $intent\n    </queries>\n</manifest>',
+          );
+  }
   _write(manifest, text, updated);
   _androidSigning();
 }

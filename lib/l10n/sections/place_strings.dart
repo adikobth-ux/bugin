@@ -101,9 +101,7 @@ class PlaceStrings extends L10nSection {
         'Бүгінге бос уақыт жоқ — ертеңге байқап көр',
       );
 
-  String get pickSession => tr('Выбери сеанс', 'Сеансты таңда');
   String get pickTime => tr('Выбери время', 'Уақытты таңда');
-  String get sessionToday => tr('Сеанс сегодня', 'Бүгінгі сеанс');
 
   /// Подпись кнопки времени для скринридера: «Сегодня: 19:00. Изменить».
   String slotSemantics(String title, String value) =>
@@ -112,13 +110,7 @@ class PlaceStrings extends L10nSection {
   String get buyTicket => tr('Купить билет', 'Билет сатып алу');
   String get book => tr('Забронировать', 'Брондау');
 
-  String ticketsTitle(String name) => tr('Билеты · $name', 'Билеттер · $name');
   String bookingTitle(String name) => tr('Бронь · $name', 'Бронь · $name');
-
-  String paidDemo(String slot) => tr(
-        'Готово! $slot — это демо, реальной оплаты нет',
-        'Дайын! $slot — бұл демо, нақты төлем жоқ',
-      );
 
   String bookedDemo(String slot) => tr(
         'Готово! $slot — это демо, реальной брони нет',
@@ -127,21 +119,15 @@ class PlaceStrings extends L10nSection {
 
   // ---------- Подтверждение брони ----------
 
-  String get sessionLabel => tr('Сеанс', 'Сеанс');
   String get timeLabel => tr('Время', 'Уақыт');
 
   /// «2 гостя» / «2 қонақ».
   String guests(int n) =>
       tr('$n ${ruPlural(n, 'гость', 'гостя', 'гостей')}', '$n қонақ');
 
-  String get ticketCount => tr('Количество билетов', 'Билет саны');
   String get partySize => tr('Сколько вас будет', 'Неше адам боласыңдар');
   String get less => tr('Меньше', 'Азайту');
   String get more => tr('Больше', 'Көбейту');
-
-  /// «Итого: 24 000 ₸» / «Жиыны: 24 000 ₸».
-  String total(int amount) =>
-      tr('Итого: ${Fmt.tenge(amount)}', 'Жиыны: ${Fmt.tenge(amount)}');
 
   /// «Средний счёт на всех: ≈ 24 000 ₸».
   String averageTotal(int amount) => tr(
@@ -154,7 +140,6 @@ class PlaceStrings extends L10nSection {
         'Бұл прототип: растау ештеңені брондамайды, ақша да алмайды.',
       );
 
-  String get goToPayment => tr('Перейти к оплате', 'Төлемге өту');
   String get confirmBooking => tr('Подтвердить бронь', 'Броньды растау');
 }
 

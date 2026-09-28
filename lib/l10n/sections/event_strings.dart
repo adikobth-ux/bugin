@@ -28,7 +28,6 @@ class EventStrings extends L10nSection {
   String priceFrom(int price) =>
       tr('от${Fmt.nbsp}${Fmt.tenge(price)}', Fmt.tenge(price));
 
-  String get perTicket => tr('за билет', 'ең арзан билет');
   String get buyTicket => tr('Купить билет', 'Билет алу');
 
   // ---------- Дата и место ----------
@@ -70,31 +69,8 @@ class EventStrings extends L10nSection {
   String get about => tr('О событии', 'Іс-шара туралы');
   String get similar => tr('Похожие события', 'Ұқсас іс-шаралар');
 
-  // ---------- Покупка билетов ----------
-
-  String get tickets => tr('Билеты', 'Билеттер');
-
-  String paymentDemo(String ticket) => tr(
-        '$ticket — оплата подключится вместе с backend. Это демо',
-        '$ticket — төлем backend-пен бірге қосылады. Бұл демо',
-      );
+  // ---------- Билеты ----------
 
   String get ticketsSoon =>
       tr('Билеты скоро появятся', 'Билеттер жақында сатылымға шығады');
-
-  /// «2 билета» / «2 билет».
-  String ticketCount(int n) =>
-      tr('$n ${ruPlural(n, 'билет', 'билета', 'билетов')}', '$n билет');
-
-  String get less => tr('Меньше', 'Азайту');
-  String get more => tr('Больше', 'Көбейту');
-
-  /// «Оплатить 24 000 ₸» / «24 000 ₸ төлеу».
-  String pay(int amount) =>
-      tr('Оплатить ${Fmt.tenge(amount)}', '${Fmt.tenge(amount)} төлеу');
-
-  String get prototypeNote => tr(
-        'Это прототип: оплата не проводится.',
-        'Бұл прототип: төлем жүргізілмейді.',
-      );
 }

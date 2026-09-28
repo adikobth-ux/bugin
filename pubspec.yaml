@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
   # Избранное, профиль, история поиска и настройки на устройстве.
   shared_preferences: ^2.3.0
+  # «Купить билет» открывает Ticketon или Kino.kz.
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

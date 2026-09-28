@@ -15,6 +15,14 @@ abstract final class MockEvents {
   static const jazz = 'jazz_on_terrace';
   static const seagull = 'seagull_play';
 
+  // События вымышленные, поэтому ссылки ведут на разделы афиши операторов.
+  // С backend придёт ссылка на страницу конкретного события.
+  static const _ticketonAstana = 'https://ticketon.kz/astana';
+  static const _ticketonTheatres = 'https://ticketon.kz/astana/theatres';
+  static const _kinoMovies = 'https://kino.kz/ru/movie';
+  static const _kinoArt = 'https://kino.kz/ru/art';
+  static const _kinoStandup = 'https://kino.kz/ru/standup';
+
   static List<Event> build({
     DateTime? now,
     AppLanguage language = AppLanguage.ru,
@@ -70,6 +78,7 @@ abstract final class MockEvents {
           t('Живой звук и световое шоу', 'Жанды дыбыс және жарық шоуы'),
           t('Хорошо для вечера с друзьями', 'Достармен кеш өткізуге жақсы'),
         ],
+        ticketUrl: _ticketonAstana,
         occasions: const {Occasion.friends, Occasion.date},
         vibes: const {Vibe.active},
         isFeatured: true,
@@ -114,6 +123,7 @@ abstract final class MockEvents {
           ),
           t('Красивый вид на вечерний город', 'Кешкі қаланың әдемі көрінісі'),
         ],
+        ticketUrl: _ticketonAstana,
         occasions: const {Occasion.date, Occasion.friends, Occasion.solo},
         vibes: const {Vibe.beautiful, Vibe.calm},
       ),
@@ -161,6 +171,7 @@ abstract final class MockEvents {
           t('Кино вдвоём — классика вечера', 'Екеулеп кино көру — кештің классикасы'),
           t('Билет от 2 500 ₸', 'Билет 2 500 ₸-ден бастап'),
         ],
+        ticketUrl: _kinoMovies,
         occasions: const {Occasion.date, Occasion.friends, Occasion.solo},
         vibes: const {Vibe.calm},
         venuePlaceId: MockPlaces.lunaCinema,
@@ -201,6 +212,7 @@ abstract final class MockEvents {
           t('Все материалы уже включены', 'Барлық материалдар бағаға қосылған'),
           t('Картину заберёте с собой', 'Суретті өздеріңмен алып кетесіңдер'),
         ],
+        ticketUrl: _ticketonAstana,
         occasions: const {Occasion.date, Occasion.friends, Occasion.solo},
         vibes: const {Vibe.novelty, Vibe.calm},
         venuePlaceId: MockPlaces.holstStudio,
@@ -245,6 +257,7 @@ abstract final class MockEvents {
           ),
           t('Билет 3 000 ₸', 'Билет 3 000 ₸'),
         ],
+        ticketUrl: _kinoArt,
         occasions: const {Occasion.date, Occasion.solo, Occasion.friends},
         vibes: const {Vibe.calm, Vibe.beautiful},
         venuePlaceId: MockPlaces.bastauGallery,
@@ -283,6 +296,7 @@ abstract final class MockEvents {
           t('Вход 3 000 ₸', 'Кіру 3 000 ₸'),
           t('Спокойная атмосфера', 'Тыныш атмосфера'),
         ],
+        ticketUrl: _ticketonAstana,
         occasions: const {Occasion.date, Occasion.friends},
         vibes: const {Vibe.calm, Vibe.beautiful},
         venuePlaceId: MockPlaces.theGarden,
@@ -317,6 +331,7 @@ abstract final class MockEvents {
           t('Весёлый вечер с друзьями', 'Достармен көңілді кеш'),
           t('Билет 4 000 ₸', 'Билет 4 000 ₸'),
         ],
+        ticketUrl: _kinoStandup,
         occasions: const {Occasion.friends},
         vibes: const {Vibe.active, Vibe.novelty},
       ),
@@ -353,6 +368,7 @@ abstract final class MockEvents {
           t('Камерный зал на 80 мест', '80 орындық камералық зал'),
           t('Классика в современной постановке', 'Заманауи қойылымдағы классика'),
         ],
+        ticketUrl: _ticketonTheatres,
         occasions: const {Occasion.date, Occasion.solo, Occasion.family},
         vibes: const {Vibe.calm, Vibe.beautiful},
       ),

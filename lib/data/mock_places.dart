@@ -318,6 +318,7 @@ abstract final class MockPlaces {
         distanceKm: 1.9,
         taxiMinutes: 8,
         bookingType: BookingType.ticket,
+        bookingUrl: 'https://kino.kz/ru/movie',
         pitch: t(
           'Вечерние сеансы в 20:00 и 21:30',
           'Кешкі сеанстар 20:00 мен 21:30-да',
@@ -416,6 +417,7 @@ abstract final class MockPlaces {
         distanceKm: 2.1,
         taxiMinutes: 9,
         bookingType: BookingType.ticket,
+        bookingUrl: 'https://ticketon.kz/astana',
         pitch: t(
           'Необычный вариант для двоих — опыт не нужен',
           'Екі адамға ерекше нұсқа — тәжірибе керек емес',
@@ -457,6 +459,7 @@ abstract final class MockPlaces {
         distanceKm: 3.0,
         taxiMinutes: 11,
         bookingType: BookingType.ticket,
+        bookingUrl: 'https://kino.kz/ru/art',
         pitch: t(
           'Тихо, красиво и есть о чём поговорить',
           'Тыныш, әдемі және сөйлесетін тақырып көп',

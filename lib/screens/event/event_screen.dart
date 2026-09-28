@@ -7,11 +7,11 @@ import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
 import 'package:bugin/services/app_services.dart';
+import 'package:bugin/services/external_links.dart';
 import 'package:bugin/services/favorites_store.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/theme/visuals.dart';
-import 'package:bugin/widgets/app_sheet.dart';
 import 'package:bugin/widgets/buttons.dart';
 import 'package:bugin/widgets/chips.dart';
 import 'package:bugin/widgets/detail_scaffold.dart';
@@ -86,20 +86,15 @@ class _EventScreenState extends State<EventScreen> {
         '${l10n.event.approxDuration(l10n.duration(event.durationMinutes))}';
   }
 
+  /// Билеты продаёт оператор: открываем его страницу (приложение или браузер).
   Future<void> _openTickets(Event event) async {
-    final l10n = context.l10n;
-    final selected = await showAppSheet<TicketCategory>(
-      context,
-      title: l10n.event.tickets,
-      subtitle: '${event.title} · ${l10n.eventWhen(event.startsAt)}',
-      builder: (sheetContext) => _TicketSheet(
-        tickets: event.tickets,
-        onBuy: (ticket) => Navigator.of(sheetContext).pop(ticket),
-      ),
-    );
-    if (selected != null && mounted) {
-      HapticFeedback.mediumImpact();
-      showAppSnack(context, l10n.event.paymentDemo(selected.name));
+    final url = event.ticketUrl;
+    if (url == null) {
+      return;
+    }
+    final opened = await AppScope.of(context).links.open(Uri.parse(url));
+    if (!opened && mounted) {
+      showAppSnack(context, context.l10n.linkOpenFailed);
     }
   }
 
@@ -153,15 +148,20 @@ class _EventScreenState extends State<EventScreen> {
                   strings.priceFrom(event.priceFrom),
                   style: AppText.h2.copyWith(letterSpacing: 0),
                 ),
-                Text(strings.perTicket, style: AppText.micro),
+                Text(
+                  event.ticketUrl == null
+                      ? strings.ticketsSoon
+                      : l10n.ticketsOn(linkProviderName(Uri.parse(event.ticketUrl!))),
+                  style: AppText.micro,
+                ),
               ],
             ),
             const SizedBox(width: 16),
             Expanded(
               child: PrimaryButton(
                 label: strings.buyTicket,
-                icon: Icons.confirmation_number_outlined,
-                onPressed: () => _openTickets(event),
+                icon: Icons.open_in_new_rounded,
+                onPressed: event.ticketUrl == null ? null : () => _openTickets(event),
               ),
             ),
           ],
@@ -227,11 +227,14 @@ class _EventScreenState extends State<EventScreen> {
                 if (event.tickets.length > 1) event.tickets.map((t) => t.name).join(', '),
                 event.ageLimit > 0 ? '${event.ageLimit}+' : strings.noAgeLimit,
               ].join(' · '),
-              trailing: const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.inkSecondary,
-              ),
-              onTap: () => _openTickets(event),
+              trailing: event.ticketUrl == null
+                  ? null
+                  : const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 20,
+                      color: AppColors.inkSecondary,
+                    ),
+              onTap: event.ticketUrl == null ? null : () => _openTickets(event),
             ),
           ],
         ),
@@ -280,78 +283,6 @@ class _EventScreenState extends State<EventScreen> {
               ],
             );
           },
-        ),
-      ],
-    );
-  }
-}
-
-class _TicketSheet extends StatefulWidget {
-  const _TicketSheet({required this.tickets, required this.onBuy});
-
-  final List<TicketCategory> tickets;
-  final ValueChanged<TicketCategory> onBuy;
-
-  @override
-  State<_TicketSheet> createState() => _TicketSheetState();
-}
-
-class _TicketSheetState extends State<_TicketSheet> {
-  int _selected = 0;
-  int _count = 1;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = context.l10n.event;
-    if (widget.tickets.isEmpty) {
-      return Text(strings.ticketsSoon, style: AppText.caption);
-    }
-    final ticket = widget.tickets[_selected];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < widget.tickets.length; i++)
-          SheetOption(
-            label: widget.tickets[i].name,
-            trailingText: Fmt.tenge(widget.tickets[i].price),
-            selected: i == _selected,
-            onTap: () => setState(() => _selected = i),
-          ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                strings.ticketCount(_count),
-                style: AppText.bodyStrong,
-              ),
-            ),
-            CircleIconButton(
-              icon: Icons.remove_rounded,
-              style: CircleButtonStyle.soft,
-              size: 36,
-              semanticLabel: strings.less,
-              onPressed: _count > 1 ? () => setState(() => _count--) : null,
-            ),
-            CircleIconButton(
-              icon: Icons.add_rounded,
-              style: CircleButtonStyle.soft,
-              size: 36,
-              semanticLabel: strings.more,
-              onPressed: _count < 6 ? () => setState(() => _count++) : null,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        PrimaryButton(
-          label: strings.pay(ticket.price * _count),
-          onPressed: () => widget.onBuy(ticket),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          strings.prototypeNote,
-          textAlign: TextAlign.center,
-          style: AppText.caption,
         ),
       ],
     );

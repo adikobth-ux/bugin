@@ -53,6 +53,7 @@ class Event {
     required this.occasions,
     required this.vibes,
     this.venuePlaceId,
+    this.ticketUrl,
     this.isFeatured = false,
   });
 
@@ -80,6 +81,7 @@ class Event {
         occasions: parseEnumSet(json['occasions'], Occasion.tryParse),
         vibes: parseEnumSet(json['vibes'], Vibe.tryParse),
         venuePlaceId: json['venuePlaceId'] as String?,
+        ticketUrl: json['ticketUrl'] as String?,
         isFeatured: json['isFeatured'] as bool? ?? false,
       );
 
@@ -110,6 +112,10 @@ class Event {
 
   /// Если событие проходит в месте из каталога.
   final String? venuePlaceId;
+
+  /// Страница покупки билета у оператора (Ticketon, Kino.kz).
+  /// Сами билеты Bugin не продаёт — кнопка «Купить билет» открывает эту ссылку.
+  final String? ticketUrl;
   final bool isFeatured;
 
   DateTime get endsAt => startsAt.add(Duration(minutes: durationMinutes));
@@ -139,6 +145,7 @@ class Event {
         'occasions': occasions.map((o) => o.name).toList(),
         'vibes': vibes.map((v) => v.name).toList(),
         'venuePlaceId': venuePlaceId,
+        'ticketUrl': ticketUrl,
         'isFeatured': isFeatured,
       };
 }
