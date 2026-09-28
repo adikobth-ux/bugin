@@ -1,7 +1,8 @@
 # Bugin — frontend-прототип
 
 Кликабельный прототип приложения Bugin для Android и iOS на Flutter.
-Работает на mock data: без backend, AI, авторизации, реальных броней и оплат.
+По умолчанию работает на mock data: без backend, AI, авторизации, реальных броней и оплат.
+Может брать данные с тестового сервера — см. «Сервер».
 Два языка — русский и казахский. Избранное, профиль, история поиска, город и язык
 сохраняются на телефоне.
 
@@ -56,8 +57,8 @@ lib/
 ├── theme/       цвета, типографика, отступы, тема, иконки категорий
 ├── models/      Place, Event, Scenario, SearchIntent, Recommendation, UserProfile (+ fromJson/toJson)
 ├── data/        mock data — один источник правды для всех экранов
-├── services/    интерфейсы репозиториев и сервисов + mock-реализации, избранное, профиль,
-│                история поиска, хранилище на устройстве (storage/)
+├── services/    интерфейсы репозиториев и сервисов + mock-реализации (mock/) и работа
+│                с сервером (api/), избранное, профиль, история поиска, хранилище (storage/)
 ├── navigation/  маршруты, типизированные переходы, вкладки
 ├── widgets/     переиспользуемые компоненты (PlaceCard, EventCard, ScenarioCard, …)
 └── screens/     экраны
@@ -65,9 +66,28 @@ lib/
 
 Экраны работают только с интерфейсами из `services/`:
 `PlacesRepository`, `EventsRepository`, `SearchService`, `EveningPlanner`, `ProfileRepository`.
-Чтобы подключить backend, достаточно написать реализации этих интерфейсов (REST, AI-сервис)
-и собрать их в `AppServices` вместо `AppServices.mock()` — экраны менять не нужно.
-Модели уже умеют `fromJson` / `toJson`, `AppImage` понимает и ассеты, и URL.
+Реализаций две: `AppServices.mock()` (данные внутри приложения) и `AppServices.api()`
+(HTTP-запросы к серверу, `lib/services/api`) — экраны о разнице не знают.
+Модели умеют `fromJson` / `toJson`, `AppImage` понимает и ассеты, и URL.
+
+## Сервер
+
+Без настроек приложение работает на тестовых данных внутри себя. Чтобы места, афиша,
+AI-поиск и планы вечера приходили с сервера [bugin-backend](https://github.com/adikobth-ux/bugin-backend),
+передайте его адрес при сборке (без `/v1` на конце):
+
+```bash
+flutter run --dart-define=BUGIN_API_URL=https://<хост>
+flutter build apk --release --dart-define=BUGIN_API_URL=https://<хост>
+```
+
+- В CI адрес берётся из переменной репозитория `BUGIN_API_URL`:
+  Settings → Secrets and variables → Actions → Variables. Если она не задана,
+  APK и веб-версия собираются на тестовых данных, как раньше.
+- Контракт API — [docs/api.md](https://github.com/adikobth-ux/bugin-backend/blob/HEAD/docs/api.md)
+  в репозитории сервера; клиент — `lib/services/api`, тесты — `test/api_test.dart`.
+- Избранное, профиль и история поиска пока хранятся на телефоне (вход появится позже).
+- Бесплатный сервер засыпает без запросов: первый запрос после паузы может идти около минуты.
 
 ## Языки
 

@@ -51,8 +51,11 @@ jobs:
       - name: Tests
         run: .github/scripts/run.sh "flutter test" flutter test --reporter expanded
 
+      # Адрес сервера — переменная репозитория BUGIN_API_URL
+      # (Settings → Secrets and variables → Actions → Variables).
+      # Пустая — приложение на тестовых данных прототипа.
       - name: Build APK
-        run: .github/scripts/run.sh "build apk" flutter build apk --release
+        run: .github/scripts/run.sh "build apk" flutter build apk --release "--dart-define=BUGIN_API_URL=${{ vars.BUGIN_API_URL }}"
 
       - name: APK signature
         run: |
@@ -66,7 +69,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Build web
-        run: .github/scripts/run.sh "build web" flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        run: .github/scripts/run.sh "build web" flutter build web --release --base-href "/${{ github.event.repository.name }}/" "--dart-define=BUGIN_API_URL=${{ vars.BUGIN_API_URL }}"
 
       # APK кладём рядом с веб-версией, чтобы скачать его прямо с телефона.
       - name: Add APK to web build

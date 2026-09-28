@@ -16,9 +16,19 @@ Future<void> main() async {
     WidgetsBinding.instance.platformDispatcher.locales,
   );
 
+  // Адрес сервера задаётся при сборке: --dart-define=BUGIN_API_URL=https://…
+  // Без него приложение работает на тестовых данных прототипа.
+  const apiUrl = String.fromEnvironment('BUGIN_API_URL');
+
   runApp(
     BuginApp(
-      services: AppServices.mock(storage: storage, deviceLanguage: deviceLanguage),
+      services: apiUrl.isEmpty
+          ? AppServices.mock(storage: storage, deviceLanguage: deviceLanguage)
+          : AppServices.api(
+              baseUrl: Uri.parse(apiUrl),
+              storage: storage,
+              deviceLanguage: deviceLanguage,
+            ),
     ),
   );
 }
