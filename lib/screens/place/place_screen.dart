@@ -52,7 +52,9 @@ class _PlaceScreenState extends State<PlaceScreen> {
   }
 
   void _retry() {
-    setState(() => _future = AppScope.of(context).places.byId(widget.placeId));
+    setState(() {
+      _future = AppScope.of(context).places.byId(widget.placeId);
+    });
   }
 
   @override
