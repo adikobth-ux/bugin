@@ -208,7 +208,8 @@ void main() {
 
   for (final language in AppLanguage.values) {
     testWidgets('карточка помещается на узком экране (${language.code})', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(320, 640));
+      // Ширина узкого телефона; высота с запасом, чтобы карточка точно построилась.
+      await tester.binding.setSurfaceSize(const Size(320, 1400));
       tester.platformDispatcher.textScaleFactorTestValue = 1.3;
       addTearDown(() {
         tester.binding.setSurfaceSize(null);

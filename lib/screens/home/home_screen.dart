@@ -106,7 +106,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refresh() async {
     final next = _load();
-    setState(() => _future = next);
+    // Фигурные скобки: стрелка вернула бы Future, а setState такого не принимает.
+    setState(() {
+      _future = next;
+    });
     try {
       await next;
     } catch (_) {
