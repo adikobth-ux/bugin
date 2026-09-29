@@ -6,8 +6,10 @@ import 'package:bugin/models/models.dart';
 import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
 import 'package:bugin/services/app_services.dart';
+import 'package:bugin/services/location.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
+import 'package:bugin/widgets/buttons.dart';
 import 'package:bugin/widgets/chips.dart';
 import 'package:bugin/widgets/city_button.dart';
 import 'package:bugin/widgets/layout.dart';
@@ -65,11 +67,34 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<_HomeData> _future;
+  late final LocationState _location;
+  late final AppLifecycleListener _lifecycle;
+  GeoPoint? _loadedFor;
 
   @override
   void initState() {
     super.initState();
+    _location = AppScope.of(context).location;
+    _loadedFor = _location.point;
+    _location.addListener(_onLocation);
+    // Вернулись из настроек телефона — вдруг геолокацию включили или выключили.
+    _lifecycle = AppLifecycleListener(onResume: _location.recheck);
     _future = _load();
+  }
+
+  @override
+  void dispose() {
+    _location.removeListener(_onLocation);
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  /// Узнали, где пользователь (или он выключил геолокацию) — «рядом» уже другое.
+  void _onLocation() {
+    if (!samePoint(_location.point, _loadedFor)) {
+      _loadedFor = _location.point;
+      _refresh();
+    }
   }
 
   Future<_HomeData> _load() async {
@@ -176,6 +201,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SliverToBoxAdapter(
+              child: ListenableBuilder(
+                listenable: _location,
+                builder: (context, _) => _location.shouldPrompt
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: _LocationPrompt(location: _location),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+            SliverToBoxAdapter(
               child: FutureBuilder<_HomeData>(
                 future: _future,
                 builder: (context, snapshot) =>
@@ -185,6 +221,72 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// «Показать, что рядом с тобой?» — разрешение спрашиваем только по нажатию.
+class _LocationPrompt extends StatelessWidget {
+  const _LocationPrompt({required this.location});
+
+  final LocationState location;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n.home;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.locationPromptTitle, style: AppText.title),
+                const SizedBox(height: 4),
+                Text(s.locationPromptBody, style: AppText.caption),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    PrimaryButton(
+                      label: s.locationAllow,
+                      icon: Icons.near_me_outlined,
+                      height: 44,
+                      expand: false,
+                      onPressed: location.busy ? null : location.enable,
+                    ),
+                    PrimaryButton(
+                      label: s.locationLater,
+                      variant: ButtonVariant.soft,
+                      height: 44,
+                      expand: false,
+                      onPressed: location.busy ? null : location.dismissPrompt,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

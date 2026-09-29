@@ -15,6 +15,7 @@ import 'package:bugin/services/evening_planner.dart';
 import 'package:bugin/services/events_repository.dart';
 import 'package:bugin/services/external_links.dart';
 import 'package:bugin/services/favorites_store.dart';
+import 'package:bugin/services/location.dart';
 import 'package:bugin/services/mock/mock_evening_planner.dart';
 import 'package:bugin/services/mock/mock_events_repository.dart';
 import 'package:bugin/services/mock/mock_places_repository.dart';
@@ -50,10 +51,14 @@ class AppServices {
     required this.profile,
     required this.history,
     required this.state,
+    LocationState? location,
     this.links = const UrlLauncherLinks(),
     VoidCallback? restoreDefaults,
-  }) : _restoreDefaults = restoreDefaults {
+  })  : location = location ?? LocationState(const NoLocationSource()),
+        _restoreDefaults = restoreDefaults {
     state.language.addListener(_translateSavedScenarios);
+    // Доступ к геолокации узнаём сразу, но ни о чём не спрашиваем.
+    this.location.start();
   }
 
   /// Прототип на mock data.
@@ -72,7 +77,9 @@ class AppServices {
         storage: storage,
         deviceLanguage: deviceLanguage,
         links: links,
-        sources: (language, history) {
+        // Тестовые данные прототипа не зависят от того, где пользователь.
+        locationSource: const NoLocationSource(),
+        sources: (language, history, _) {
           final catalog = MockCatalog(now: now);
           final planner = MockEveningPlanner(catalog, language, latency: latency);
           return (
@@ -105,13 +112,20 @@ class AppServices {
     AppLanguage deviceLanguage = AppLanguage.ru,
     ExternalLinks links = const UrlLauncherLinks(),
     http.Client? httpClient,
+    LocationSource locationSource = const NoLocationSource(),
   }) =>
       AppServices._onDevice(
         storage: storage,
         deviceLanguage: deviceLanguage,
         links: links,
-        sources: (language, history) {
-          final api = ApiClient(baseUrl, language, client: httpClient);
+        locationSource: locationSource,
+        sources: (language, history, location) {
+          final api = ApiClient(
+            baseUrl,
+            language,
+            client: httpClient,
+            location: () => location.point,
+          );
           return (
             places: ApiPlacesRepository(api),
             events: ApiEventsRepository(api),
@@ -135,18 +149,23 @@ class AppServices {
     required KeyValueStore? storage,
     required AppLanguage deviceLanguage,
     required ExternalLinks links,
-    required _DataSources Function(CurrentLanguage language, SearchHistory history)
-        sources,
+    required LocationSource locationSource,
+    required _DataSources Function(
+      CurrentLanguage language,
+      SearchHistory history,
+      LocationState location,
+    ) sources,
   }) {
     final store = storage ?? MemoryKeyValueStore();
     final state = AppState(storage: store, language: deviceLanguage);
     AppLanguage language() => state.language.value;
+    final location = LocationState(locationSource, storage: store);
 
     final history = SearchHistory(
       storage: store,
       initial: MockProfile.recentQueries(language()),
     );
-    final data = sources(language, history);
+    final data = sources(language, history, location);
     final favorites = FavoritesStore(
       storage: store,
       placeIds: MockProfile.favoritePlaceIds,
@@ -168,6 +187,7 @@ class AppServices {
       profile: profile,
       history: history,
       state: state,
+      location: location,
       links: links,
       restoreDefaults: () {
         favorites.reset(
@@ -189,6 +209,9 @@ class AppServices {
   final ProfileStore profile;
   final SearchHistory history;
   final AppState state;
+
+  /// Где пользователь: «Сейчас рядом» и расстояния от него.
+  final LocationState location;
 
   /// Переход на Ticketon, Kino.kz и сайты заведений.
   final ExternalLinks links;

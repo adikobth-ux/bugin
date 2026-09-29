@@ -17,6 +17,8 @@ dependencies:
   url_launcher: ^6.3.0
   # Запросы к серверу Bugin (lib/services/api).
   http: ^1.2.0
+  # Где пользователь: «Сейчас рядом» и расстояния от него (lib/services/location.dart).
+  geolocator: '>=13.0.0 <15.0.0'
 
 dev_dependencies:
   flutter_test:

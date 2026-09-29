@@ -34,6 +34,25 @@ class ProfileStrings extends L10nSection {
   String get languageRow => tr('Язык', 'Тіл');
   String get languageTitle => tr('Язык приложения', 'Қолданба тілі');
 
+  String get locationRow => tr('Геолокация', 'Геолокация');
+  String get locationOn =>
+      tr('Включена — расстояния от тебя', 'Қосулы — қашықтық сенен есептеледі');
+  String get locationOff => tr(
+        'Выключена — считаем от центра Астаны',
+        'Өшірулі — Астана орталығынан есептейміз',
+      );
+  String get locationBlocked => tr(
+        'Запрещена в настройках телефона',
+        'Телефон баптауларында тыйым салынған',
+      );
+  String get locationServiceOff =>
+      tr('На телефоне выключена геолокация', 'Телефонда геолокация өшірулі');
+  String get locationTurnOffHint => tr(
+        'Выключить можно в настройках телефона или браузера',
+        'Телефон не браузер баптауларында өшіруге болады',
+      );
+  String get locationOpenSettings => tr('Настройки', 'Баптаулар');
+
   String get notifications => tr('Уведомления', 'Хабарландырулар');
   String get notificationsHint =>
       tr('События и напоминания', 'Іс-шаралар мен еске салғыштар');

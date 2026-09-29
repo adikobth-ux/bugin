@@ -8,6 +8,7 @@ import 'package:bugin/navigation/app_navigator.dart';
 import 'package:bugin/navigation/app_tab.dart';
 import 'package:bugin/services/app_services.dart';
 import 'package:bugin/services/favorites_store.dart';
+import 'package:bugin/services/location.dart';
 import 'package:bugin/theme/app_colors.dart';
 import 'package:bugin/theme/app_text.dart';
 import 'package:bugin/theme/visuals.dart';
@@ -20,6 +21,32 @@ import 'package:bugin/widgets/pressable.dart';
 import 'package:bugin/widgets/snack.dart';
 
 const _chevron = Icon(Icons.chevron_right_rounded, color: AppColors.inkSecondary);
+
+String _locationStatus(BuildContext context, LocationAccess access) {
+  final s = context.l10n.profile;
+  return switch (access) {
+    LocationAccess.granted => s.locationOn,
+    LocationAccess.blocked => s.locationBlocked,
+    LocationAccess.serviceOff => s.locationServiceOff,
+    LocationAccess.canAsk || LocationAccess.unavailable => s.locationOff,
+  };
+}
+
+/// Выключена — спрашиваем (или ведём в настройки, если телефон запретил);
+/// включена — выключить можно только в настройках телефона, подсказываем где.
+void _toggleLocation(BuildContext context, LocationState location) {
+  if (!location.isOn) {
+    location.enable();
+    return;
+  }
+  final s = context.l10n.profile;
+  showAppSnack(
+    context,
+    s.locationTurnOffHint,
+    actionLabel: kIsWeb ? null : s.locationOpenSettings,
+    onAction: kIsWeb ? null : location.openSettings,
+  );
+}
 
 /// Профиль без повторов: у каждого действия одно место.
 class ProfileScreen extends StatelessWidget {
@@ -36,6 +63,7 @@ class ProfileScreen extends StatelessWidget {
           services.favorites,
           services.state.city,
           services.state.language,
+          services.location,
         ]),
         builder: (context, _) {
           final profile = services.profile.profile;
@@ -154,6 +182,14 @@ class ProfileScreen extends StatelessWidget {
                     trailing: _chevron,
                     onTap: () => _pickLanguage(context),
                   ),
+                  if (services.location.supported)
+                    InfoRow.text(
+                      icon: Icons.near_me_outlined,
+                      title: l10n.profile.locationRow,
+                      subtitle: _locationStatus(context, services.location.access),
+                      trailing: _chevron,
+                      onTap: () => _toggleLocation(context, services.location),
+                    ),
                   InfoRow.text(
                     icon: Icons.notifications_none_rounded,
                     title: l10n.profile.notifications,

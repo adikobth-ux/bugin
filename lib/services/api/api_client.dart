@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'package:bugin/l10n/app_language.dart';
+import 'package:bugin/models/models.dart';
 
 /// Ошибка запроса к серверу Bugin.
 ///
@@ -35,17 +36,20 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode, $code): $message';
 }
 
-/// HTTP-клиент сервера Bugin: JSON в UTF-8, язык ответа — в `Accept-Language`.
+/// HTTP-клиент сервера Bugin: JSON в UTF-8, язык ответа — в `Accept-Language`,
+/// где пользователь — в `X-Bugin-Location` (если он разрешил геолокацию).
 class ApiClient {
   ApiClient(
     Uri baseUrl,
     CurrentLanguage language, {
     http.Client? client,
+    GeoPoint? Function()? location,
     // Бесплатный сервер засыпает без запросов и просыпается около минуты:
     // первый запрос после паузы не должен обрываться раньше времени.
     this.timeout = const Duration(seconds: 75),
   })  : baseUrl = _serverRoot(baseUrl),
         _language = language,
+        _location = location,
         _client = client ?? http.Client();
 
   /// Адрес сервера без `/` и `/v1` на конце: пути запросов (`/v1/places`)
@@ -53,6 +57,7 @@ class ApiClient {
   final Uri baseUrl;
   final Duration timeout;
   final CurrentLanguage _language;
+  final GeoPoint? Function()? _location;
   final http.Client _client;
 
   /// GET [path] (например, `/v1/places/nearby`). Возвращает разобранный JSON.
@@ -72,12 +77,19 @@ class ApiClient {
         ),
       );
 
-  /// Язык берётся при каждом запросе: после смены языка в профиле
-  /// сервер сразу отвечает на новом.
-  Map<String, String> _headers() => {
-        'Accept': 'application/json',
-        'Accept-Language': _language().code,
-      };
+  /// Язык и точка берутся при каждом запросе: после смены языка или
+  /// включения геолокации сервер сразу отвечает по-новому.
+  /// Точка — в заголовке, а не в адресе: адреса попадают в журналы сервера.
+  Map<String, String> _headers() {
+    final point = _location?.call();
+    return {
+      'Accept': 'application/json',
+      'Accept-Language': _language().code,
+      if (point != null)
+        'X-Bugin-Location':
+            '${point.lat.toStringAsFixed(3)},${point.lng.toStringAsFixed(3)}',
+    };
+  }
 
   Uri _uri(String path, Map<String, String>? query) => baseUrl.replace(
         path: '${baseUrl.path}$path',

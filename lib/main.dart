@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:bugin/app.dart';
 import 'package:bugin/l10n/app_language.dart';
 import 'package:bugin/services/app_services.dart';
+import 'package:bugin/services/location.dart';
 import 'package:bugin/services/storage/shared_prefs_store.dart';
 
 Future<void> main() async {
@@ -28,6 +29,7 @@ Future<void> main() async {
               baseUrl: Uri.parse(apiUrl),
               storage: storage,
               deviceLanguage: deviceLanguage,
+              locationSource: const DeviceLocationSource(),
             ),
     ),
   );

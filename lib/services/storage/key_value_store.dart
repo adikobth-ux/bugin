@@ -18,8 +18,9 @@ abstract final class StorageKeys {
   static const favorites = 'bugin.favorites.v1';
   static const profile = 'bugin.profile.v1';
   static const searchHistory = 'bugin.search_history.v1';
+  static const location = 'bugin.location.v1';
 
-  static const all = {settings, favorites, profile, searchHistory};
+  static const all = {settings, favorites, profile, searchHistory, location};
 }
 
 /// Хранилище в памяти: для тестов и как запасной вариант,

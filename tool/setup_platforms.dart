@@ -14,6 +14,8 @@ const appDescription = 'Bugin — чем заняться сегодня';
 const themeColor = '#5B5BF0';
 const backgroundColor = '#F5F6FB';
 const languages = ['ru', 'kk'];
+const locationReason =
+    'Bugin показывает места и события рядом с вами и считает до них расстояние.';
 
 Future<void> main() async {
   _android();
@@ -41,6 +43,16 @@ void _android() {
       RegExp(r'<manifest[^>]*>'),
       (m) => '${m[0]}\n    <uses-permission android:name="android.permission.INTERNET" />',
     );
+  }
+  // «Сейчас рядом» от пользователя. С Android 12 человек сам выбирает:
+  // точное местоположение или примерное.
+  for (final permission in ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION']) {
+    if (!updated.contains('android.permission.$permission')) {
+      updated = updated.replaceFirstMapped(
+        RegExp(r'<manifest[^>]*>'),
+        (m) => '${m[0]}\n    <uses-permission android:name="android.permission.$permission" />',
+      );
+    }
   }
   // «Купить билет» открывает Ticketon/Kino.kz: Android 11+ должен знать,
   // что приложение открывает https-ссылки в других приложениях.
@@ -116,6 +128,14 @@ void _ios() {
   final text = plist.readAsStringSync();
   var updated = _setPlistString(text, 'CFBundleDisplayName', appName);
   updated = _setPlistString(updated, 'CFBundleName', appName);
+  if (!updated.contains('<key>NSLocationWhenInUseUsageDescription</key>')) {
+    // Без этой строки iOS не покажет вопрос о геолокации и закроет приложение.
+    updated = updated.replaceFirst(
+      RegExp(r'</dict>\s*</plist>\s*$'),
+      '\t<key>NSLocationWhenInUseUsageDescription</key>\n'
+      '\t<string>$locationReason</string>\n</dict>\n</plist>\n',
+    );
+  }
   if (!updated.contains('<key>CFBundleLocalizations</key>')) {
     // Без этого списка iOS не отдаёт приложению казахский язык системы.
     final items = languages.map((code) => '\t\t<string>$code</string>').join('\n');

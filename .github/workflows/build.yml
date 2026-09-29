@@ -66,8 +66,13 @@ jobs:
           tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
           apk=build/app/outputs/flutter-apk/app-release.apk
           echo "::notice title=APK signature::$("$tools/apksigner" verify --print-certs "$apk" | grep -m1 'SHA-256')"
-          if ! "$tools/aapt2" dump permissions "$apk" | grep -q 'android.permission.INTERNET'; then
+          permissions=$("$tools/aapt2" dump permissions "$apk")
+          if ! echo "$permissions" | grep -q 'android.permission.INTERNET'; then
             echo "::error title=APK::нет разрешения INTERNET — приложение не достучится до сервера"
+            exit 1
+          fi
+          if ! echo "$permissions" | grep -q 'android.permission.ACCESS_FINE_LOCATION'; then
+            echo "::error title=APK::нет разрешения на геолокацию — «рядом» не будет работать"
             exit 1
           fi
           echo "::notice title=Сервер::${BUGIN_API_URL#mock}"
